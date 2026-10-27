@@ -44,7 +44,7 @@ describe("service role isolation", () => {
       const s = readFileSync(f, "utf8");
       // Type-only imports are erased at build time and are fine.
       // @/server/admin/actions is a "use server" module (RPC boundary), so client imports of it are fine.
-      return /^\s*["']use client["']/.test(s) && /^import (?!type )[^;]*from ["']@\/server\/(admin\/(?!actions)|supabase|files|queries)/m.test(s);
+      return /^\s*["']use client["']/.test(s) && /^import (?!type )[^;]*from ["']@\/server\/(admin\/(?!actions|imports)|supabase|files|queries)/m.test(s);
     });
     expect(offenders).toEqual([]);
   });

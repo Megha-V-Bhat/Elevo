@@ -85,7 +85,7 @@ function CgpaMode(p: Parameters<typeof Planner>[0]) {
   const [locked, setLocked] = useState<Record<number, number | null>>({});
   const rem = remaining === "" ? null : Number(remaining);
   const res = planCgpa({ target, earned_credits: p.earned_credits, current_points: p.current_points, remaining_credits: rem, best_sgpa: p.best_sgpa, max_points: max });
-  const semesters = p.remaining_semesters.length ? p.remaining_semesters : rem ? [{ label: "Remaining", credits: rem }] : [];
+  const semesters = useMemo(() => (p.remaining_semesters.length ? p.remaining_semesters : rem ? [{ label: "Remaining", credits: rem }] : []), [p.remaining_semesters, rem]);
   const scenario = useMemo(
     () => solveScenario({ earned_credits: p.earned_credits, current_points: p.current_points, target, max_points: max }, semesters.map((s, i) => ({ ...s, sgpa: locked[i] ?? null }))),
     [p.earned_credits, p.current_points, target, max, semesters, locked],

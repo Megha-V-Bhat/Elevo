@@ -17,7 +17,7 @@ export default async function MentorReports() {
         title="Student reports"
         subtitle="Professional PDF reports built from verified records and the mentoring items you've marked for inclusion. No charts, insights, Pulse, plans or questions — ever."
         action={
-          <a href="/api/exports/mentees?format=xlsx" className="inline-flex min-h-11 items-center gap-2 rounded-control border border-line bg-surface px-4 font-semibold text-ink-900 shadow-1 hover:bg-pine-50">
+          <a href="/api/exports/mentees?format=xlsx" download className="inline-flex min-h-11 items-center gap-2 rounded-control border border-line bg-surface px-4 font-semibold text-ink-900 shadow-1 hover:bg-pine-50">
             <Download className="size-[18px]" /> Export my mentee list
           </a>
         }

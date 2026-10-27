@@ -269,3 +269,30 @@ describe("service-only functions", () => {
     expect(r[0]).toMatchObject({ third: false });
   });
 });
+
+describe("bulk import functions", () => {
+  it("only the HOD can import", async () => {
+    await expect(as(db, P.X, `select import_subjects('[]'::jsonb, false)`)).rejects.toThrow(/HOD only/);
+    await expect(as(db, P.A, `select import_results('[]'::jsonb, false)`)).rejects.toThrow(/HOD only/);
+  });
+  it("subjects import inserts, skips duplicates or updates", async () => {
+    const rows = JSON.stringify([{ code: "CS601", name: "Compilers", credits: 4, semester: 6 }, { code: "CS501", name: "DBMS renamed", credits: 4, semester: 5 }]);
+    const r1 = await as<{ import_subjects: { inserted: number; skipped: number } }>(db, P.H, `select import_subjects($1::jsonb, false)`, [rows]);
+    expect(r1[0].import_subjects).toMatchObject({ inserted: 1, skipped: 1 });
+    const r2 = await as<{ import_subjects: { updated: number } }>(db, P.H, `select import_subjects($1::jsonb, true)`, [rows]);
+    expect(r2[0].import_subjects.updated).toBe(2);
+  });
+  it("results import is all-or-nothing", async () => {
+    const bad = JSON.stringify([
+      { usn: "1XXb", semester: 6, subject_code: "CS601", mse_marks: 40, see_marks: 70, grade_points: 8 },
+      { usn: "NOPE", semester: 6, subject_code: "CS601", mse_marks: 40, see_marks: 70 },
+    ]);
+    await expect(as(db, P.H, `select import_results($1::jsonb, false)`, [bad])).rejects.toThrow(/Unknown USN/);
+    expect(await count(P.H, `select * from academic_semesters where student_id = $1 and semester_no = 6`, [P.B])).toBe(0);
+    const good = JSON.stringify([{ usn: "1XXb", semester: 6, subject_code: "CS601", mse_marks: 40, see_marks: 70, grade_points: 8, result: "PASS" }]);
+    const r = await as<{ import_results: { inserted: number } }>(db, P.H, `select import_results($1::jsonb, false)`, [good]);
+    expect(r[0].import_results.inserted).toBe(1);
+    const s = await as<{ status: string }>(db, P.H, `select status from academic_semesters where student_id = $1 and semester_no = 6`, [P.B]);
+    expect(s[0].status).toBe("VERIFIED");
+  });
+});

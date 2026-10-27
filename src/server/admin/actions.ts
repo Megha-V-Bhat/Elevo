@@ -219,3 +219,25 @@ export async function deleteView(id: string) {
     return true;
   });
 }
+
+/** Bulk "please follow up" notification to mentors of flagged students (system-written after the HOD check). */
+export async function notifyMentors(groups: { mentor_id: string; names: string[] }[]) {
+  return handle(async () => {
+    await requireRole("HOD");
+    const v = z.array(z.object({ mentor_id: uuid, names: z.array(z.string().max(120)).max(200) })).max(200).parse(groups);
+    must(
+      await adminDb()
+        .from("notifications")
+        .insert(
+          v.map((g) => ({
+            user_id: g.mentor_id,
+            type: "intervention",
+            title: `Follow-up requested for ${g.names.length} mentee${g.names.length > 1 ? "s" : ""}`,
+            body: g.names.slice(0, 5).join(", ") + (g.names.length > 5 ? ` and ${g.names.length - 5} more` : ""),
+            link: "/mentor#attention",
+          })),
+        ),
+    );
+    return v.length;
+  });
+}
