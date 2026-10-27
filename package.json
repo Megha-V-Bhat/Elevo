@@ -16,7 +16,9 @@
     "db:types": "supabase gen types typescript --linked > src/types/database.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:demo": "tsx scripts/seed-demo.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "check:env": "node scripts/check-env.mjs",
+    "build:emails": "node scripts/build-email-templates.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",
@@ -56,6 +58,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@electric-sql/pglite": "0.3.10",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "1.55.1",

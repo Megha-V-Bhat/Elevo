@@ -88,7 +88,7 @@ export default function Landing() {
             <div className="relative mx-auto w-full max-w-[520px]" aria-hidden>
               <Illustration name="hero" className="h-auto w-full opacity-95" />
               <div className="absolute top-2 -left-2 w-[190px] rounded-card border border-line bg-surface p-3 shadow-dock md:-left-8">
-                <GrowthRings semesters={DEMO_RINGS} cgpa={8.12} size={164} />
+                <GrowthRings semesters={DEMO_RINGS} cgpa={8.12} size={164} decorative />
               </div>
               <div className="absolute right-0 bottom-6 w-[250px] rounded-card border border-line bg-surface p-3.5 shadow-dock md:-right-6">
                 <p className="label-caps mb-2">Weekly pulse</p>

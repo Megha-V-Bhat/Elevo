@@ -158,7 +158,7 @@ async function main() {
         if (!current) entries.push({ subject_key: sub.code, semester_no: s, credits: Number(sub.credits), points: g?.points ?? null });
         return { academic_semester_id: semRow!.id, subject_id: sub.id, mse_marks: marks.mse_marks, mse_max: 50, see_marks: marks.see_marks, see_max: 100, grade: g?.grade ?? null, grade_points: g?.points ?? null, result: g ? (g.passed ? "PASS" : "FAIL") : "PENDING", _credits: Number(sub.credits), _points: g?.points ?? null };
       });
-      ok(await db.from("student_subject_results").insert(results.map(({ _credits, _points, ...r }) => r)), "results");
+      ok(await db.from("student_subject_results").insert(results.map((x) => ({ academic_semester_id: x.academic_semester_id, subject_id: x.subject_id, mse_marks: x.mse_marks, mse_max: x.mse_max, see_marks: x.see_marks, see_max: x.see_max, grade: x.grade, grade_points: x.grade_points, result: x.result }))), "results");
       const sg = sgpa(results.map((r) => ({ credits: r._credits, points: r._points })));
       const cg = cgpa(entries);
       ok(

@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Elevo
 
-## Getting Started
+**Mentoring that grows with you.** A full-stack academic mentoring platform for college departments, with three roles — **Mentee** (student), **Mentor** (faculty) and **HOD** (administrator).
 
-First, run the development server:
+- Semester-wise academic records with configurable grading, verification and audited corrections
+- Transparent, rule-based insights and risk indicators with "Why am I seeing this?" evidence
+- Recommendations, goals and improvement plans, study resources, mentoring sessions, a Stepping-Stones journey timeline
+- **Weekly Pulse** (30-second check-in), **Ask My Mentor** (private question threads), **Grade Goal Planner** (what-if targets)
+- HOD Assignment Board (drag and drop, keyboard accessible, Undo), directories, analytics, interventions, bulk import, exports and audit history
+- Professional PDF reports built from verified records only
+- Meadow Light design system: Bricolage Grotesque + Manrope, pine/mint with lilac and butter, floating Dock, paper-cut illustrations, signature SVG visuals
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Docs: [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [FEATURES.md](FEATURES.md) · [PROGRESS.md](PROGRESS.md) · [DEPLOY.md](DEPLOY.md) · [USER_GUIDE.md](USER_GUIDE.md)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Next.js 15 (App Router, RSC, Server Actions) · TypeScript strict · Tailwind CSS v4 · Radix primitives · Motion · dnd-kit · cmdk · zod · Supabase (Postgres + RLS, Auth, Storage, Realtime) · @react-pdf/renderer · papaparse + exceljs · Resend · Vercel Cron · Vitest · PGlite (in-process Postgres for RLS tests) · Playwright + axe.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+1. **Tools:** Node 20+ and pnpm (`npm i -g pnpm`). The Supabase CLI is a dev dependency (`pnpm supabase …`) — a global npm install isn't supported.
+2. **Install:** `pnpm install`
+3. **Supabase:** create `elevo-dev` (and later `elevo-prod`). In the dashboard: turn **off** "Allow new users to sign up", keep email confirmation on, set Site URL `http://localhost:3000` and redirect `http://localhost:3000/**`, and configure custom SMTP with Resend.
+4. **Secrets:** `cp .env.example .env.local` and fill it in. `pnpm check:env` lists missing names (never values). Never commit `.env.local`.
+5. **Database:**
+   ```bash
+   pnpm supabase login            # once, uses your access token
+   pnpm supabase link --project-ref <SUPABASE_PROJECT_REF>
+   pnpm db:push                   # applies supabase/migrations
+   pnpm db:seed                   # department, grading scheme, thresholds, first HOD
+   pnpm db:demo                   # optional realistic demo data → DEMO.md
+   ```
+6. **Email templates:** paste `supabase/templates/*.html` into Supabase → Authentication → Emails → Templates (subjects in `supabase/templates/SUBJECTS.md`).
+7. **Run:** `pnpm dev` → http://localhost:3000. Sign in with `SEED_HOD_EMAIL` and finish the setup wizard.
 
-To learn more about Next.js, take a look at the following resources:
+Without Supabase keys the public pages and `/styleguide` still render; app routes show a "connect your database" notice.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Script | What it does |
+|---|---|
+| `pnpm dev` / `build` / `start` | Next.js |
+| `pnpm typecheck` · `pnpm lint` | TypeScript and ESLint |
+| `pnpm test` | All Vitest suites (engines, PDF, server-action guards, RLS) |
+| `pnpm test:unit` · `pnpm test:rls` | Engines/PDF/guards only · Postgres RLS suite on PGlite |
+| `pnpm test:e2e` | Playwright at 390 / 834 / 1440 with axe (role journeys need `E2E_*` env, see `tests/e2e/roles.spec.ts`) |
+| `pnpm db:push` · `db:types` · `db:seed` · `db:demo` | Supabase migrations, types, seeds |
+| `pnpm check:env` · `build:emails` | Env check · regenerate email templates |
 
-## Deploy on Vercel
+## Security model (short)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Access is enforced in Postgres: RLS on every table, `SECURITY DEFINER` helpers (`app.user_role()`, `app.is_hod()`, `app.is_active_mentor_of()`), column-guard triggers for fields RLS can't protect, and transactional workflow functions. Every server action and route handler re-checks the caller (`src/server/authz.ts`), and a unit test fails the build if any exported server action skips that check. The service-role key is only used under `src/server/admin/*` after a HOD/system check. Details in [ARCHITECTURE.md](ARCHITECTURE.md).

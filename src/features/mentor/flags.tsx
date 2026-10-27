@@ -19,7 +19,7 @@ export function FlagChips({ flags, pulse, max = 3 }: { flags: RiskFlag[]; pulse?
           >
             {i.pulse ? <HeartPulse className="size-3" aria-hidden /> : <TriangleAlert className="size-3" aria-hidden />}
             {i.label}
-            {i.pulse && <span className="font-medium opacity-80">· self-reported</span>}
+            {i.pulse && <span className="font-medium">· self-reported</span>}
             <span className="sr-only">: {i.reason}</span>
           </span>
         </li>

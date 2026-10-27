@@ -87,11 +87,14 @@ export function GrowthRings({
   cgpa,
   size = 220,
   onPine = false,
+  decorative = false,
 }: {
   semesters: { no: number; sgpa: number | null; credits: number | null }[];
   cgpa: number | null;
   size?: number;
   onPine?: boolean;
+  /** Inside aria-hidden marketing art: no focus stops. */
+  decorative?: boolean;
 }) {
   const c = size / 2;
   const sorted = [...semesters].sort((a, b) => a.no - b.no);
@@ -109,7 +112,7 @@ export function GrowthRings({
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="max-w-full" role="img" aria-label={`Growth rings: CGPA ${fmt(cgpa)} across ${sorted.length} semesters`}>
       {rings.map((g) => (
-        <g key={g.no} tabIndex={0} aria-label={`Semester ${g.no}: SGPA ${fmt(g.sgpa)}, ${g.credits ?? "unknown"} credits`} className="outline-none focus-visible:[&>circle]:opacity-70">
+        <g key={g.no} tabIndex={decorative ? undefined : 0} aria-label={`Semester ${g.no}: SGPA ${fmt(g.sgpa)}, ${g.credits ?? "unknown"} credits`} className="outline-none focus-visible:[&>circle]:opacity-70">
           <title>{`Sem ${g.no} · SGPA ${fmt(g.sgpa)} · ${g.credits ?? "?"} credits`}</title>
           <circle cx={c} cy={c} r={g.mid} fill="none" stroke={onPine ? "rgba(255,255,255,0.12)" : TRACK} strokeWidth={g.thick} />
           <circle
