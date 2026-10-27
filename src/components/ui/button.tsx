@@ -14,7 +14,7 @@ export const buttonVariants = cva(
         secondary: "border border-line bg-surface text-ink-900 shadow-1 hover:border-pine-100 hover:bg-pine-50",
         tonal: "bg-mint-100 text-pine-700 hover:bg-mint-100/70",
         ghost: "text-ink-700 hover:bg-canvas-sunk",
-        destructive: "bg-coral-600 text-white hover:bg-coral-700",
+        destructive: "bg-coral-700 text-white hover:bg-[#9a2424]",
         link: "h-auto px-0 text-pine-600 underline-offset-4 hover:underline",
         onPine: "bg-white text-pine-700 hover:bg-mint-50",
       },

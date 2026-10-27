@@ -207,7 +207,7 @@ declare
   prev uuid;
   moved jsonb := '[]'::jsonb;
 begin
-  if not app.is_hod() then raise exception 'Only the HOD can assign mentors' using errcode = '42501'; end if;
+  if not (app.is_hod() or app.is_service()) then raise exception 'Only the HOD can assign mentors' using errcode = '42501'; end if;
   if not exists (select 1 from public.users where id = p_mentor_id and role = 'MENTOR' and status <> 'SUSPENDED') then
     raise exception 'Choose an active mentor' using errcode = 'P0001';
   end if;
@@ -233,7 +233,7 @@ returns int
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare n int;
 begin
-  if not app.is_hod() then raise exception 'Only the HOD can change assignments' using errcode = '42501'; end if;
+  if not (app.is_hod() or app.is_service()) then raise exception 'Only the HOD can change assignments' using errcode = '42501'; end if;
   update public.mentor_assignments set ended_at = now(), reason = coalesce(p_reason, reason)
     where student_id = any (p_student_ids) and ended_at is null;
   get diagnostics n = row_count;

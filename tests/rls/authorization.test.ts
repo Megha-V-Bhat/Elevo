@@ -296,3 +296,28 @@ describe("bulk import functions", () => {
     expect(s[0].status).toBe("VERIFIED");
   });
 });
+
+describe("anonymous callers", () => {
+  const asAnon = async (sql: string) => {
+    await db.query(`select set_config('request.jwt.claims', $1, false), set_config('request.jwt.claim.sub', '', false)`, [JSON.stringify({ role: "anon" })]);
+    await db.exec("set role anon");
+    try {
+      return await db.query(sql);
+    } finally {
+      await db.exec(`reset role; select set_config('request.jwt.claims', '', false);`);
+    }
+  };
+  it("cannot call workflow RPCs (even SECURITY DEFINER ones)", async () => {
+    await expect(asAnon(`select assign_students(array['${P.A}']::uuid[], '${P.X}')`)).rejects.toThrow();
+    await expect(asAnon(`select hod_mentor_activity()`)).rejects.toThrow();
+  });
+  it("cannot read any table", async () => {
+    await expect(asAnon(`select * from student_profiles`)).rejects.toThrow();
+  });
+  it("is_service is false for anon even inside SECURITY DEFINER", async () => {
+    await db.query(`select set_config('request.jwt.claims', $1, false)`, [JSON.stringify({ role: "anon" })]);
+    const r = await db.query<{ s: boolean }>(`select app.is_service() as s`);
+    await db.exec(`select set_config('request.jwt.claims', '', false)`);
+    expect(r.rows[0].s).toBe(false);
+  });
+});

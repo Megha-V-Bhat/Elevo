@@ -37,15 +37,15 @@ export default async function AcademicsPage() {
                 <GrowthRings semesters={a.semesters.map((s) => ({ no: s.semester_no, sgpa: s.sgpa, credits: s.credits }))} cgpa={a.cgpa} size={210} onPine />
               </div>
               <div className="md:max-w-[34rem]">
-                <p className="label-caps !text-white/80">Cumulative</p>
+                <p className="label-caps !text-white">Cumulative</p>
                 <p className="mt-1 font-display text-display-l font-bold tnum">{a.cgpa == null ? "CGPA not calculated yet" : `${a.cgpa.toFixed(2)} CGPA`}</p>
-                <p className="mt-1 text-white/90">
+                <p className="mt-1 text-white">
                   {a.cgpa == null ? a.cgpa_reason : `Across ${a.semesters.filter((s) => s.sgpa != null).length} semesters · ${a.earned_credits} credits · ${a.verified_count} verified`}
                 </p>
                 <div className="mt-4">
                   <RingLegend onPine />
                 </div>
-                <p className="mt-3 flex items-start gap-1.5 text-small text-white/85">
+                <p className="mt-3 flex items-start gap-1.5 text-small text-white">
                   <CircleHelp className="mt-0.5 size-4 shrink-0" aria-hidden />
                   Each ring is one semester, innermost first. Thicker rings carry more credits.
                 </p>

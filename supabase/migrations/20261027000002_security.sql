@@ -1,10 +1,12 @@
 -- Authorization: helper functions, column guards and Row Level Security on every table.
 
 -- ───────────── Helpers (SECURITY DEFINER, fixed search_path) ─────────────
+-- True only for the service role (API key) or a direct DB session with no JWT (migrations, psql).
+-- Never trust current_user here: inside SECURITY DEFINER functions it is the owner.
 create or replace function app.is_service() returns boolean
 language sql stable as $$
   select coalesce(auth.jwt() ->> 'role', '') = 'service_role'
-      or (auth.uid() is null and current_user in ('postgres', 'supabase_admin', 'service_role'))
+      or (coalesce(auth.jwt() ->> 'role', '') = '' and session_user in ('postgres', 'supabase_admin'))
 $$;
 
 -- Named user_role() (not current_role(), which is a reserved SQL function).
@@ -412,6 +414,10 @@ create policy plan_write on public.target_plans for all to authenticated
   using (student_id = auth.uid()) with check (student_id = auth.uid() and app.user_role() = 'MENTEE');
 
 grant usage on schema public to authenticated, anon;
+-- Anonymous visitors may not call any RPC.
+revoke execute on all functions in schema public from anon, public;
+grant execute on all functions in schema public to authenticated, service_role;
+alter default privileges in schema public revoke execute on functions from anon, public;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 revoke all on public.rate_limits from authenticated, anon;

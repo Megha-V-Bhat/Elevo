@@ -172,9 +172,9 @@
   background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
   background-size: 18px 18px;
 }
-/* Sunrise: white text sits on the pine half; the light end only ever sits behind graphics. */
+/* Sunrise: every stop keeps white text ≥ 4.5:1 (measured: 9.4 / 5.5 / 4.9). Mint lives in the decorative glow and graphics. */
 @utility bg-sunrise {
-  background-image: linear-gradient(135deg, #0b4f4a 0%, #0f766e 48%, #14b8a6 82%, #6ee7b7 100%);
+  background-image: linear-gradient(135deg, #0b4f4a 0%, #0f766e 55%, #0f7f75 100%);
 }
 @utility bloom-wash {
   background-image: radial-gradient(closest-side, var(--color-mint-50), transparent);

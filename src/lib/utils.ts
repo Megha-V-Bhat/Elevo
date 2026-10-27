@@ -1,5 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+// Teach tailwind-merge our custom type-scale tokens; otherwise it mistakes `text-body`
+// for a colour and drops `text-white` when both appear.
+const twMerge = extendTailwindMerge({
+  extend: { classGroups: { "font-size": [{ text: ["display-xl", "display-l", "display-m", "stat", "h3", "body", "small", "label"] }] } },
+});
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 

@@ -73,9 +73,9 @@ export default async function MenteeHome() {
                 <GrowthRings semesters={a.semesters.map((s) => ({ no: s.semester_no, sgpa: s.sgpa, credits: s.credits }))} cgpa={a.cgpa} size={190} onPine />
               </div>
               <div>
-                <p className="label-caps !text-white/80">Your growth</p>
+                <p className="label-caps !text-white">Your growth</p>
                 <p className="mt-1 font-display text-display-m font-bold tnum">{a.cgpa == null ? "CGPA not calculated yet" : `${a.cgpa.toFixed(2)} CGPA`}</p>
-                <p className="mt-1 text-white/90">{a.cgpa == null ? a.cgpa_reason : `across ${withSgpa.length} semester${withSgpa.length > 1 ? "s" : ""} · ${a.earned_credits} credits`}</p>
+                <p className="mt-1 text-white">{a.cgpa == null ? a.cgpa_reason : `across ${withSgpa.length} semester${withSgpa.length > 1 ? "s" : ""} · ${a.earned_credits} credits`}</p>
                 {last && prev && (
                   <p className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-small font-semibold">
                     {(last.sgpa as number) >= (prev.sgpa as number) ? "↑" : "↓"} {Math.abs((last.sgpa as number) - (prev.sgpa as number)).toFixed(2)} SGPA vs Sem {prev.semester_no}
@@ -91,9 +91,9 @@ export default async function MenteeHome() {
             </div>
           ) : (
             <div className="py-4">
-              <p className="label-caps !text-white/80">Let&apos;s begin</p>
+              <p className="label-caps !text-white">Let&apos;s begin</p>
               <p className="mt-1 font-display text-display-m font-bold">Add your first semester</p>
-              <p className="mt-1 max-w-[44ch] text-white/90">Your growth rings appear as soon as marks are in. It takes about five minutes.</p>
+              <p className="mt-1 max-w-[44ch] text-white">Your growth rings appear as soon as marks are in. It takes about five minutes.</p>
               <Link href="/mentee/academics?new=1" className="mt-5 inline-flex min-h-11 items-center gap-1.5 rounded-control bg-white px-4 font-semibold text-pine-700 hover:bg-mint-50">
                 Add a semester <ArrowRight className="size-4" />
               </Link>

@@ -67,11 +67,11 @@ export default async function HodHome({ searchParams }: { searchParams: Promise<
             <div className="flex items-center gap-5">
               <CoverageDonut value={coverage} onPine size={120} />
               <div>
-                <p className="label-caps !text-white/80">Mentoring coverage</p>
+                <p className="label-caps !text-white">Mentoring coverage</p>
                 <p className="mt-1 font-display text-display-m font-bold tnum">
                   {filtered.length - unassigned.length} of {filtered.length} students
                 </p>
-                <p className="text-white/90">{unassigned.length ? `${unassigned.length} still need a mentor` : "Everyone has a mentor."}</p>
+                <p className="text-white">{unassigned.length ? `${unassigned.length} still need a mentor` : "Everyone has a mentor."}</p>
               </div>
             </div>
             {unassigned.length > 0 && (

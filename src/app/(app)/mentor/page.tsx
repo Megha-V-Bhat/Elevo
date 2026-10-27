@@ -41,9 +41,9 @@ export default async function MentorHome() {
         <HeroCard className="md:col-span-6 lg:col-span-12">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="label-caps !text-white/80">Your mentees this semester</p>
+              <p className="label-caps !text-white">Your mentees this semester</p>
               <p className="mt-1 font-display text-[3.5rem] leading-[3.75rem] font-bold tnum">{entries.length}</p>
-              <p className="mt-1 text-white/90">
+              <p className="mt-1 text-white">
                 {avgDelta == null ? "SGPA changes appear once two semesters are in." : `Average SGPA change ${avgDelta >= 0 ? "+" : ""}${avgDelta.toFixed(2)} vs the previous semester`}
               </p>
             </div>

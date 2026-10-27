@@ -139,7 +139,7 @@ export function GrowthRings({
 
 export function RingLegend({ onPine }: { onPine?: boolean }) {
   return (
-    <ul className={cn("flex flex-wrap gap-x-4 gap-y-1 text-small", onPine ? "text-white/90" : "text-ink-700")}>
+    <ul className={cn("flex flex-wrap gap-x-4 gap-y-1 text-small", onPine ? "text-white" : "text-ink-700")}>
       {[9, 7.5, 6.5, 5].map((v) => (
         <li key={v} className="inline-flex items-center gap-1.5">
           <span aria-hidden className="size-2.5 rounded-full" style={{ background: sgpaBand(v).color }} />
@@ -183,9 +183,9 @@ export function TrendLine({
   height?: number;
   unit?: string;
 }) {
-  const W = 560;
+  const W = 420; // narrow viewBox so labels stay ≥ 11px on phones
   const H = height;
-  const pad = { l: 34, r: 16, t: 26, b: 28 };
+  const pad = { l: 40, r: 18, t: 30, b: 32 };
   const valid = points.map((p, i) => ({ ...p, i })).filter((p) => p.value != null) as { label: string; value: number; i: number }[];
   const lo = Math.max(min, Math.floor(Math.min(...valid.map((v) => v.value), max) - 1));
   const hi = Math.min(max, Math.ceil(Math.max(...valid.map((v) => v.value), min) + 0.5));
@@ -196,7 +196,7 @@ export function TrendLine({
   const best = valid.reduce<(typeof valid)[number] | null>((b, v) => (!b || v.value > b.value ? v : b), null);
   const ticks = Array.from({ length: 4 }, (_, k) => lo + ((hi - lo) * k) / 3);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`Trend: ${valid.map((v) => `${v.label} ${v.value}`).join(", ") || "no data"}`}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto h-auto max-h-[260px] w-full" role="img" aria-label={`Trend: ${valid.map((v) => `${v.label} ${v.value}`).join(", ") || "no data"}`}>
       <defs>
         <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0F766E" stopOpacity="0.22" />
@@ -206,13 +206,13 @@ export function TrendLine({
       {ticks.map((t) => (
         <g key={t}>
           <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke={GRID} />
-          <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="12" fill={AXIS} className="tnum">
+          <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="15" fill={AXIS} className="tnum">
             {t.toFixed(1)}
           </text>
         </g>
       ))}
       {points.map((p, i) => (
-        <text key={p.label} x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill={AXIS}>
+        <text key={p.label} x={x(i)} y={H - 8} textAnchor="middle" fontSize="15" fill={AXIS}>
           {p.label}
         </text>
       ))}
@@ -234,7 +234,7 @@ export function TrendLine({
               strokeWidth="2.5"
             />
             {delta != null && Math.abs(delta) >= 0.01 && (
-              <text x={x(v.i)} y={y(v.value) - 13} textAnchor="middle" fontSize="11" fontWeight="700" fill={delta >= 0 ? "#0B5D56" : "#B42E2E"} className="tnum">
+              <text x={x(v.i)} y={y(v.value) - 13} textAnchor="middle" fontSize="14" fontWeight="700" fill={delta >= 0 ? "#0B5D56" : "#B42E2E"} className="tnum">
                 {delta >= 0 ? "+" : ""}
                 {delta.toFixed(1)}
               </text>
@@ -243,7 +243,7 @@ export function TrendLine({
         );
       })}
       {best && valid.length > 1 && (
-        <text x={x(best.i)} y={pad.t - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#7A5600">
+        <text x={x(best.i)} y={pad.t - 12} textAnchor="middle" fontSize="14" fontWeight="700" fill="#7A5600">
           ★ best
         </text>
       )}
