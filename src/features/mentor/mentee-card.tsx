@@ -5,7 +5,7 @@ import { fmt } from "@/lib/utils";
 import type { RosterEntry } from "@/server/queries/roster";
 import { FlagChips } from "./flags";
 
-export function MenteeCard({ e, href }: { e: RosterEntry; href: string }) {
+export function MenteeCard({ e, href, showPulse = true }: { e: RosterEntry; href: string; showPulse?: boolean }) {
   const p = e.profile;
   return (
     <Link href={href} className="flex flex-col rounded-card border border-line bg-surface p-4 shadow-1 transition-[transform,box-shadow,border-color] duration-[220ms] ease-grow hover:-translate-y-px hover:border-pine-100 hover:shadow-2">
@@ -24,9 +24,11 @@ export function MenteeCard({ e, href }: { e: RosterEntry; href: string }) {
         </div>
         {e.sgpaDelta != null ? <DeltaChip value={e.sgpaDelta} label="SGPA vs prev" /> : <span className="text-small text-ink-500">Latest SGPA {fmt(e.latestSgpa)}</span>}
       </div>
-      <div className="mt-3">
-        <PulseStrip weeks={e.strip} compact />
-      </div>
+      {showPulse && (
+        <div className="mt-3">
+          <PulseStrip weeks={e.strip} compact />
+        </div>
+      )}
       {(e.flags.length > 0 || e.pulse.length > 0) && (
         <div className="mt-3">
           <FlagChips flags={e.flags} pulse={e.pulse} max={2} />

@@ -150,7 +150,7 @@ export default function Landing() {
               <div className="mt-8 grid gap-5 md:grid-cols-3">
                 {[
                   { icon: Lock, t: "Mentors see only their mentees", d: "Enforced in the database. Reassign a student and access moves instantly." },
-                  { icon: Users, t: "Students are never ranked", d: "Every comparison is with your own past or your own target. No leaderboards." },
+                  { icon: Users, t: "Students are never ranked", d: "Every comparison is with your own past or your own target. Never a rank." },
                   { icon: FileLock2, t: "PDFs carry verified records only", d: "No charts, insights, check-ins or questions ever leave the website." },
                 ].map((p) => (
                   <div key={p.t} className="rounded-card border border-white/15 bg-white/[0.06] p-6">

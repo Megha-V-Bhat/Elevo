@@ -105,23 +105,34 @@ export const toSubject = (s: Record<string, unknown>): Subject => ({
   ia_components: (s.ia_components as Subject["ia_components"]) ?? [],
 });
 
+const SEM_SELECT = `id, student_id, semester_no, academic_year, status, verified_at,
+  semester_summaries ( sgpa, computed, computation_note, credits_registered ),
+  student_subject_results ( id, mse_marks, mse_max, see_marks, see_max, ia, grade, grade_points, result, credits_earned,
+    subjects ( ${SUBJECT_COLS} ) )`;
+
 /** Every semester for a student with derived values. RLS decides whether the caller may see it. */
 export const loadAcademics = cache(async (studentId: string, departmentId: string | null): Promise<Academics> => {
   const supabase = await db();
-  const [scheme, semRes] = await Promise.all([
-    activeScheme(departmentId),
-    supabase
-      .from("academic_semesters")
-      .select(
-        `id, semester_no, academic_year, status, verified_at,
-         semester_summaries ( sgpa, computed, computation_note, credits_registered ),
-         student_subject_results ( id, mse_marks, mse_max, see_marks, see_max, ia, grade, grade_points, result, credits_earned,
-           subjects ( ${SUBJECT_COLS} ) )`,
-      )
-      .eq("student_id", studentId)
-      .order("semester_no"),
-  ]);
-  const rows = (semRes.data ?? []) as Record<string, unknown>[];
+  const [scheme, semRes] = await Promise.all([activeScheme(departmentId), supabase.from("academic_semesters").select(SEM_SELECT).eq("student_id", studentId).order("semester_no")]);
+  return buildAcademics((semRes.data ?? []) as Record<string, unknown>[], scheme);
+});
+
+/** One query for many students (directories, rosters, analytics). */
+export async function loadAcademicsBulk(studentIds: string[], departmentId: string | null): Promise<Map<string, Academics>> {
+  const out = new Map<string, Academics>();
+  if (!studentIds.length) return out;
+  const supabase = await db();
+  const scheme = await activeScheme(departmentId);
+  const rows: Record<string, unknown>[] = [];
+  for (let k = 0; k < studentIds.length; k += 150) {
+    const { data } = await supabase.from("academic_semesters").select(SEM_SELECT).in("student_id", studentIds.slice(k, k + 150)).order("semester_no");
+    rows.push(...((data ?? []) as Record<string, unknown>[]));
+  }
+  for (const id of studentIds) out.set(id, buildAcademics(rows.filter((r) => r.student_id === id), scheme));
+  return out;
+}
+
+export function buildAcademics(rows: Record<string, unknown>[], scheme: Academics["scheme"]): Academics {
 
   const semesters: SemesterView[] = rows.map((s) => {
     const results: ResultView[] = ((s.student_subject_results as Record<string, unknown>[]) ?? []).map((r) => {
@@ -206,7 +217,7 @@ export const loadAcademics = cache(async (studentId: string, departmentId: strin
     best_sgpa: withSgpa.length ? Math.max(...withSgpa.map((s) => s.sgpa as number)) : null,
     verified_count: semesters.filter((s) => s.status === "VERIFIED" || s.status === "FINALIZED").length,
   };
-});
+}
 
 export async function thresholds(departmentId: string | null): Promise<{ insight: InsightThresholds; risk: RiskThresholds }> {
   const supabase = await db();
