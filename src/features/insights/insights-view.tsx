@@ -91,7 +91,7 @@ export function InsightsView({ a, report, semester, basePath, owner }: { a: Acad
         {a.semesters.map((s) => (
           <Link
             key={s.id}
-            href={`${basePath}?sem=${s.semester_no}`}
+            href={`${basePath}${basePath.includes("?") ? "&" : "?"}sem=${s.semester_no}`}
             scroll={false}
             aria-current={s.id === sel.id ? "true" : undefined}
             className={cn(
