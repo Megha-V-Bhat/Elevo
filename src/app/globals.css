@@ -1,26 +1,201 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Meadow Light — design tokens (see DESIGN.md). Light theme only for v1. */
+@theme {
+  --color-canvas: #fafbf8;
+  --color-canvas-sunk: #f1f5f0;
+  --color-surface: #ffffff;
+  --color-line: #e3e8e2;
+  --color-line-strong: #cfd8cf;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-ink-900: #10201b;
+  --color-ink-700: #34433e;
+  --color-ink-500: #5e6b66;
+  --color-ink-450: #6b7772; /* text-safe muted (axis labels, placeholders) 4.6:1 */
+  --color-ink-400: #8d9893; /* decorative only — never for text */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-pine-800: #0b4f4a;
+  --color-pine-700: #0b5d56;
+  --color-pine-600: #0f766e;
+  --color-pine-100: #d5efea;
+  --color-pine-50: #ecf8f5;
+  --color-teal-500: #14b8a6;
+
+  --color-mint-500: #22c38e;
+  --color-mint-400: #34d399;
+  --color-mint-300: #6ee7b7;
+  --color-mint-100: #d6f6e8;
+  --color-mint-50: #eefbf4;
+
+  --color-lilac-700: #5b47d6; /* text on lilac tints */
+  --color-lilac-600: #6d5ae6;
+  --color-lilac-500: #8b7cf6;
+  --color-lilac-100: #ece9fe;
+  --color-lilac-50: #f6f4ff;
+
+  --color-butter-800: #7a5600; /* text/icons on butter tints */
+  --color-butter-500: #f2b705;
+  --color-butter-400: #fbbf24;
+  --color-butter-300: #fcd34d;
+  --color-butter-100: #fef3c7;
+  --color-butter-50: #fffaeb;
+
+  --color-sky-700: #0369a1; /* text/icons on sky tints */
+  --color-sky-500: #0ea5e9;
+  --color-sky-100: #e0f2fe;
+
+  --color-coral-700: #b42e2e; /* text/icons on coral tints */
+  --color-coral-600: #dc4b4b;
+  --color-coral-500: #f06a6a;
+  --color-coral-100: #fde4e1;
+  --color-coral-50: #fff4f2;
+
+  --color-chart-track: #eef2ed;
+  --color-chart-grid: #edf1ec;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display-xl: 3.5rem;
+  --text-display-xl--line-height: 3.75rem;
+  --text-display-l: 2.5rem;
+  --text-display-l--line-height: 2.75rem;
+  --text-display-m: 1.875rem;
+  --text-display-m--line-height: 2.25rem;
+  --text-stat: 2.75rem;
+  --text-stat--line-height: 3rem;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.75rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.5rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.25rem;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+
+  --radius-hero: 28px;
+  --radius-card: 20px;
+  --radius-panel: 14px;
+  --radius-control: 12px;
+  --radius-dock: 24px;
+  --radius-avatar: 16px;
+
+  --shadow-1: 0 1px 2px rgba(16, 32, 27, 0.05);
+  --shadow-2: 0 6px 20px -8px rgba(15, 118, 110, 0.18);
+  --shadow-dock: 0 12px 32px -10px rgba(16, 32, 27, 0.22), 0 2px 6px rgba(16, 32, 27, 0.06);
+  --shadow-hero: 0 22px 44px -18px rgba(15, 118, 110, 0.55);
+
+  --ease-grow: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 360ms var(--ease-grow) both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink-700);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink-900);
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-pine-600);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--color-mint-100);
+    color: var(--color-ink-900);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-ink-450);
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
+}
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+@utility label-caps {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-500);
+}
+@utility dot-grid {
+  background-image: radial-gradient(rgba(15, 118, 110, 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+@utility dot-grid-light {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+/* Sunrise: white text sits on the pine half; the light end only ever sits behind graphics. */
+@utility bg-sunrise {
+  background-image: linear-gradient(135deg, #0b4f4a 0%, #0f766e 48%, #14b8a6 82%, #6ee7b7 100%);
+}
+@utility bloom-wash {
+  background-image: radial-gradient(closest-side, var(--color-mint-50), transparent);
+}
+@utility skeleton {
+  background: linear-gradient(90deg, var(--color-canvas-sunk) 25%, #e8eee7 37%, var(--color-canvas-sunk) 63%);
+  background-size: 400% 100%;
+  animation: var(--animate-shimmer);
+  border-radius: var(--radius-panel);
+}
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
