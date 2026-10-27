@@ -167,7 +167,7 @@ describe("mentoring records", () => {
 
 describe("Weekly Pulse", () => {
   it("student checks in; mentor sees help note only when shared", async () => {
-    await as(db, P.A, `insert into pulse_checkins (student_id, week_start, mood, workload, help_note, share_note) values ($1, current_date, 2, 'HEAVY', 'Struggling with joins', false)`, [P.A]);
+    await as(db, P.A, `insert into pulse_checkins (student_id, week_start, mood, workload, help_note, share_note) values ($1, app.today(), 2, 'HEAVY', 'Struggling with joins', false)`, [P.A]);
     expect(await count(P.X, `select * from pulse_checkins`)).toBe(0); // no direct table access
     const rows = await as<{ help_note: string | null; mood: number }>(db, P.X, `select * from mentor_pulse($1)`, [P.A]);
     expect(rows).toHaveLength(1);
@@ -184,7 +184,7 @@ describe("Weekly Pulse", () => {
   });
   it("past weeks can't be back-filled", async () => {
     await expect(
-      as(db, P.A, `insert into pulse_checkins (student_id, week_start, mood, workload) values ($1, current_date - 30, 3, 'OKAY')`, [P.A]),
+      as(db, P.A, `insert into pulse_checkins (student_id, week_start, mood, workload) values ($1, app.today() - 30, 3, 'OKAY')`, [P.A]),
     ).rejects.toThrow();
   });
   it("students can't forge the seen marker", async () => {

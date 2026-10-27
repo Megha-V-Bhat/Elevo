@@ -38,6 +38,10 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select department_id from public.users where id = auth.uid()
 $$;
 
+-- Calendar date in the institution timezone (IST); Pulse weeks are defined in local time.
+create or replace function app.today() returns date
+language sql stable as $$ select (now() at time zone 'Asia/Kolkata')::date $$;
+
 -- RPCs set this transaction-local flag so column guards let their writes through.
 create or replace function app.in_rpc() returns boolean
 language sql stable as $$ select coalesce(current_setting('app.rpc', true), '') = 'on' $$;
@@ -134,7 +138,7 @@ begin
     end if;
     new.status := 'OPEN';
     new.first_response_at := null; new.last_answer_at := null;
-    new.converted_recommendation_id := null; new.converted_session_id := null;
+    new.converted_recommendation_id := null; new.converted_session_id := null; new.mentor_seen_at := null;
     return new;
   end if;
   if new.student_id is distinct from old.student_id or new.mentor_id_at_creation is distinct from old.mentor_id_at_creation
@@ -143,8 +147,8 @@ begin
   end if;
   if old.student_id = auth.uid() then
     -- Students may only resolve (or reopen) their own thread.
-    if (new.title, new.subject_id, new.converted_recommendation_id, new.converted_session_id)
-       is distinct from (old.title, old.subject_id, old.converted_recommendation_id, old.converted_session_id)
+    if (new.title, new.subject_id, new.converted_recommendation_id, new.converted_session_id, new.mentor_seen_at)
+       is distinct from (old.title, old.subject_id, old.converted_recommendation_id, old.converted_session_id, old.mentor_seen_at)
        or (new.status is distinct from old.status and new.status not in ('RESOLVED', 'OPEN')) then
       raise exception 'Students can only resolve their own question' using errcode = '42501';
     end if;
@@ -373,11 +377,11 @@ create policy sv_own on public.saved_views for all to authenticated
 create policy pulse_select on public.pulse_checkins for select to authenticated using (student_id = auth.uid());
 create policy pulse_insert on public.pulse_checkins for insert to authenticated with check (
   student_id = auth.uid() and app.user_role() = 'MENTEE'
-  and week_start > current_date - 7 and week_start <= current_date
+  and week_start > app.today() - 7 and week_start <= app.today()
 );
 create policy pulse_update on public.pulse_checkins for update to authenticated
-  using (student_id = auth.uid() and week_start > current_date - 7)
-  with check (student_id = auth.uid() and week_start > current_date - 7);
+  using (student_id = auth.uid() and week_start > app.today() - 7)
+  with check (student_id = auth.uid() and week_start > app.today() - 7);
 
 -- ask_threads / ask_messages: the student + their CURRENT active mentor
 create policy ask_t_select on public.ask_threads for select to authenticated using (

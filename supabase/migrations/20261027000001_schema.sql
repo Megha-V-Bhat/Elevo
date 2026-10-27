@@ -407,6 +407,7 @@ create table public.ask_threads (
   first_response_at timestamptz,
   last_answer_at timestamptz,
   last_activity_at timestamptz not null default now(),
+  mentor_seen_at timestamptz,
   converted_recommendation_id uuid references public.mentor_recommendations (id) on delete set null,
   converted_session_id uuid references public.mentoring_sessions (id) on delete set null,
   created_at timestamptz not null default now()

@@ -382,7 +382,7 @@ begin
     select p.id, p.week_start, p.mood, p.workload, p.subject_confidence,
            case when p.share_note then p.help_note end, p.share_note and p.help_note is not null, p.seen_by_mentor_at
     from public.pulse_checkins p
-    where p.student_id = p_student and p.week_start > current_date - (p_weeks * 7)
+    where p.student_id = p_student and p.week_start > app.today() - (p_weeks * 7)
     order by p.week_start;
 end $$;
 
@@ -392,7 +392,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select p.student_id, p.week_start, p.mood, p.workload, p.subject_confidence, (p.share_note and p.help_note is not null)
   from public.pulse_checkins p
   join public.mentor_assignments a on a.student_id = p.student_id and a.ended_at is null and a.mentor_id = auth.uid()
-  where p.week_start > current_date - (p_weeks * 7)
+  where p.week_start > app.today() - (p_weeks * 7)
   order by p.student_id, p.week_start
 $$;
 
@@ -436,7 +436,7 @@ begin
        from public.ask_threads t join act on act.student_id = t.student_id and act.mentor_id = m.id
        where t.first_response_at is not null),
     (select case when count(*) = 0 then null else round(100.0 * count(*) filter (where exists (
-              select 1 from public.pulse_checkins p where p.student_id = act.student_id and p.week_start > current_date - 28)) / count(*), 0) end
+              select 1 from public.pulse_checkins p where p.student_id = act.student_id and p.week_start > app.today() - 28)) / count(*), 0) end
        from act where act.mentor_id = m.id),
     (select count(*)::int from public.ask_threads t join act on act.student_id = t.student_id and act.mentor_id = m.id
        where t.status = 'OPEN')
@@ -451,7 +451,7 @@ begin
   return query
   select coalesce(sp.section, '—'), count(*)::int,
     round(100.0 * count(*) filter (where exists (select 1 from public.pulse_checkins p
-      where p.student_id = sp.user_id and p.week_start > current_date - 28)) / greatest(count(*), 1), 0)
+      where p.student_id = sp.user_id and p.week_start > app.today() - 28)) / greatest(count(*), 1), 0)
   from public.student_profiles sp join public.users u on u.id = sp.user_id and u.status <> 'SUSPENDED'
   group by 1 order by 1;
 end $$;
@@ -480,7 +480,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
     (select round((percentile_cont(0.5) within group (order by extract(epoch from (t.first_response_at - t.created_at)) / 3600))::numeric, 1)
        from public.ask_threads t where t.student_id in (select student_id from act) and t.first_response_at is not null),
     (select case when count(*) = 0 then null else round(100.0 * count(*) filter (where exists (
-       select 1 from public.pulse_checkins p where p.student_id = act.student_id and p.week_start > current_date - 28)) / count(*), 0) end from act)
+       select 1 from public.pulse_checkins p where p.student_id = act.student_id and p.week_start > app.today() - 28)) / count(*), 0) end from act)
 $$;
 
 -- ───────────── Service-only helpers ─────────────
