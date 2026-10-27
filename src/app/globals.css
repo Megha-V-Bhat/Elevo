@@ -199,3 +199,48 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Chart motion — "grow, don't bounce". Disabled by the reduced-motion rule above. */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes bloom {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+@utility anim-draw {
+  stroke-dasharray: 1;
+  animation: draw 700ms var(--ease-grow) both;
+}
+@utility anim-grow-y {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: grow-y 700ms var(--ease-grow) both;
+}
+@utility anim-grow-x {
+  transform-box: fill-box;
+  transform-origin: left;
+  animation: grow-x 700ms var(--ease-grow) both;
+}
+@utility anim-bloom {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: bloom 700ms var(--ease-grow) both;
+}
