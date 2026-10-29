@@ -56,3 +56,6 @@ next-env.d.ts
 /report/
 /supabase/.temp/
 *.docx
+
+.vercel
+.env*

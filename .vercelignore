@@ -1,0 +1,9 @@
+.env*
+!.env.example
+report/
+*.docx
+*.log
+.shots/
+test-results/
+playwright-report/
+supabase/.temp/

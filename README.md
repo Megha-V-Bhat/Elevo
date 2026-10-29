@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="__LIVE__"><b>🌿 Live demo</b></a> ·
+  <a href="https://elevo-woad.vercel.app"><b>🌿 Live demo</b></a> ·
   <a href="#-features">Features</a> ·
   <a href="#-screenshots">Screenshots</a> ·
   <a href="#-how-it-works">How it works</a> ·
@@ -46,6 +46,8 @@ Assign mentors by drag and drop with undo, review interventions and analytics, i
 </td>
 </tr>
 </table>
+
+> **Try it:** open **[elevo-woad.vercel.app](https://elevo-woad.vercel.app)**. Accounts are invite-only, so ask the department HOD for a sign-in, or see [DEMO.md](DEMO.md) for the seeded demo roster.
 
 ## ✨ Features
 
