@@ -24,7 +24,12 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  experimental: { serverActions: { bodySizeLimit: "26mb" } },
+  experimental: {
+    serverActions: { bodySizeLimit: "26mb" },
+    // Reuse a page the browser rendered in the last 30 s on back/forward and repeat clicks.
+    // Server actions revalidate, so a save still shows fresh data straight away.
+    staleTimes: { dynamic: 30 },
+  },
   serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
   // @react-pdf loads pdfkit's built-in fonts (Helvetica…) with a dynamic require that tracing can't see
   outputFileTracingIncludes: {

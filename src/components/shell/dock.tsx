@@ -33,6 +33,7 @@ export function Dock({ role }: { role: Role }) {
               <Tooltip.Trigger asChild>
                 <Link
                   href={item.href}
+                  prefetch={null}
                   aria-current={active ? "page" : undefined}
                   aria-label={item.label}
                   className={cn(
@@ -121,6 +122,7 @@ export function MobileTabBar({ role }: { role: Role }) {
       <Link
         key={item.href}
         href={item.href}
+        prefetch={null}
         aria-current={active ? "page" : undefined}
         className={cn("flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold active:scale-95", active ? "text-pine-700" : "text-ink-500")}
       >
