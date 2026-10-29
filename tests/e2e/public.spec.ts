@@ -36,7 +36,8 @@ test("skip link reaches main content by keyboard", async ({ page }) => {
 });
 
 test("charts offer a table alternative", async ({ page }) => {
-  await page.goto("/styleguide");
+  const res = await page.goto("/styleguide");
+  test.skip(res?.status() === 404, "styleguide is turned off in production");
   const summary = page.getByText("View as table").first();
   await summary.click();
   await expect(page.locator("details[open] table").first()).toBeVisible();

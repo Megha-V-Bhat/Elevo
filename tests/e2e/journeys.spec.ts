@@ -16,10 +16,13 @@ const MENTOR = E.E2E_MENTOR_EMAIL ?? "iyer.mentor@demo.elevo.app";
 test.skip(!E.DEMO_STUDENT_PASSWORD || !E.DEMO_MENTOR_PASSWORD || !E.SEED_HOD_EMAIL, "needs demo credentials in .env.local");
 test.describe.configure({ mode: "serial" });
 
+/** Resets login/ask rate limits and removes the questions earlier runs posted, so the suite can run repeatedly. */
 async function clearLoginLimits() {
   if (!E.SUPABASE_SERVICE_ROLE_KEY) return;
   const admin = createClient(E.NEXT_PUBLIC_SUPABASE_URL!, E.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
   await admin.from("rate_limits").delete().like("key", "login:%");
+  await admin.from("rate_limits").delete().like("key", "ask:%");
+  await admin.from("ask_threads").delete().like("title", "E2E question %");
 }
 
 async function signIn(browser: Browser, email: string, password: string) {
