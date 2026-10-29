@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/dates";
 import { ArrowLeft, Clock, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "@/components/ui/link";
@@ -55,7 +56,7 @@ export default async function SemesterPage({ params }: { params: Promise<{ semes
           { k: "SGPA", v: fmt(s.sgpa), sub: s.sgpa == null ? s.sgpa_reason : s.manual ? "Entered manually" : "Credit-weighted" },
           { k: "Credits", v: s.credits ?? "—", sub: `${s.credits_earned} earned` },
           { k: "Subjects", v: s.results.length, sub: `${s.results.filter((r) => r.result === "PASS").length} passed` },
-          { k: "Academic year", v: s.academic_year ?? "—", sub: s.verified_at ? `Verified ${new Date(s.verified_at).toLocaleDateString("en-IN")}` : "Not verified yet" },
+          { k: "Academic year", v: s.academic_year ?? "—", sub: s.verified_at ? `Verified ${fmtDate(s.verified_at)}` : "Not verified yet" },
         ].map((x) => (
           <div key={x.k} className="rounded-card border border-line bg-surface p-4 shadow-1">
             <p className="label-caps">{x.k}</p>

@@ -22,6 +22,7 @@ import {
   signOut,
   snoozeNotification,
 } from "@/server/actions/shell";
+import { todayLocal } from "@/lib/dates";
 import { BottomSheet } from "./dock";
 import { NAV, QUICK } from "./nav";
 
@@ -119,7 +120,8 @@ function AccountMenu({ me }: { me: Me }) {
 function groupOf(iso: string) {
   const d = new Date(iso);
   const now = new Date();
-  if (d.toDateString() === now.toDateString()) return "Today";
+  // compare IST calendar days so the server (UTC) and the browser group the same way
+  if (todayLocal(d).getTime() === todayLocal(now).getTime()) return "Today";
   if (now.getTime() - d.getTime() < 7 * 86_400_000) return "This week";
   return "Earlier";
 }
@@ -142,7 +144,7 @@ export function NotificationList({ rows, onAction, compact }: { rows: Notificati
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-ink-900">{n.title}</p>
                     {n.body && <p className={cn("text-small text-ink-700", compact && "line-clamp-2")}>{n.body}</p>}
-                    <p className="mt-0.5 text-small text-ink-500">{formatDistanceToNowStrict(new Date(n.created_at), { addSuffix: true })}</p>
+                    <p className="mt-0.5 text-small text-ink-500" suppressHydrationWarning>{formatDistanceToNowStrict(new Date(n.created_at), { addSuffix: true })}</p>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {n.link && (
                         <Link

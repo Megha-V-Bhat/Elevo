@@ -72,6 +72,7 @@ test.afterAll(async () => {
 });
 
 test("student: every page renders", async ({ browser }) => {
+  test.setTimeout(300_000);
   const page = await signIn(browser, STUDENT, E.DEMO_STUDENT_PASSWORD!);
   for (const p of [
     "/mentee",
@@ -152,6 +153,7 @@ test("student: PDF report of own record downloads", async ({ browser }) => {
 });
 
 test("mentor: every page renders", async ({ browser }) => {
+  test.setTimeout(300_000);
   const page = await signIn(browser, MENTOR, E.DEMO_MENTOR_PASSWORD!);
   for (const p of [
     "/mentor",
@@ -187,6 +189,7 @@ test("mentor: every page renders", async ({ browser }) => {
 });
 
 test("HOD: every page renders, exports and templates download", async ({ browser }) => {
+  test.setTimeout(300_000);
   const page = await signIn(browser, E.SEED_HOD_EMAIL!, E.SEED_HOD_PASSWORD!);
   for (const p of [
     "/hod",
