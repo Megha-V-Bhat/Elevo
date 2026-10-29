@@ -26,7 +26,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "26mb" } },
   serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
-  outputFileTracingIncludes: { "/api/reports/**": ["./src/server/pdf/fonts/**"] },
+  // @react-pdf loads pdfkit's built-in fonts (Helvetica…) with a dynamic require that tracing can't see
+  outputFileTracingIncludes: {
+    "/api/reports/**": ["./src/server/pdf/fonts/**", "./node_modules/.pnpm/pdfkit@*/node_modules/pdfkit/js/{standard-fonts,data}/**"],
+    "/api/exports/**": ["./node_modules/.pnpm/pdfkit@*/node_modules/pdfkit/js/{standard-fonts,data}/**"],
+  },
   async headers() {
     return [
       {
