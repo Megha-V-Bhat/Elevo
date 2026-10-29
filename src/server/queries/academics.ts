@@ -122,12 +122,13 @@ export async function loadAcademicsBulk(studentIds: string[], departmentId: stri
   const out = new Map<string, Academics>();
   if (!studentIds.length) return out;
   const supabase = await db();
-  const scheme = await activeScheme(departmentId);
-  const rows: Record<string, unknown>[] = [];
-  for (let k = 0; k < studentIds.length; k += 150) {
-    const { data } = await supabase.from("academic_semesters").select(SEM_SELECT).in("student_id", studentIds.slice(k, k + 150)).order("semester_no");
-    rows.push(...((data ?? []) as Record<string, unknown>[]));
-  }
+  const chunks: string[][] = [];
+  for (let k = 0; k < studentIds.length; k += 150) chunks.push(studentIds.slice(k, k + 150));
+  const [scheme, results] = await Promise.all([
+    activeScheme(departmentId),
+    Promise.all(chunks.map((ids) => supabase.from("academic_semesters").select(SEM_SELECT).in("student_id", ids).order("semester_no"))),
+  ]);
+  const rows = results.flatMap(({ data }) => (data ?? []) as Record<string, unknown>[]);
   for (const id of studentIds) out.set(id, buildAcademics(rows.filter((r) => r.student_id === id), scheme));
   return out;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Calculator, CircleAlert, Save } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { GoalCompass } from "@/components/charts";

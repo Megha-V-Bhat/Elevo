@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Sparkles, X } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useEffect, useState } from "react";
 
 /** One data-driven next action. Dismissible per day (per-viewer convenience, stored locally). */

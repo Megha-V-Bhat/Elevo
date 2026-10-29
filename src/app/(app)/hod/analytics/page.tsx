@@ -1,6 +1,6 @@
 import { CalendarDays, HeartPulse, Inbox, MessageSquareText, Percent } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ChartFrame, GroupedBars, HBars, StackedBar, TrendLine } from "@/components/charts";
 import { Card, CardHeader } from "@/components/ui/display";
 import { Bento, PageHeader, StatTile } from "@/components/ui/layout";

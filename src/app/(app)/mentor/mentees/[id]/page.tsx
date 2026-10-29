@@ -1,6 +1,6 @@
 import { ArrowLeft, Download, Eye, FileText, MessageCircleQuestion } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { ChartFrame, GrowthRings, PULSE_LEGEND, PulseStrip, TrendLine } from "@/components/charts";
 import { Button } from "@/components/ui/button";
@@ -40,11 +40,11 @@ export default async function MentorMentee({ params, searchParams }: { params: P
   const me = await requirePage("MENTOR");
   const { id } = await params;
   const sp = await searchParams;
-  // Server-side guard in addition to RLS: only CURRENT mentees.
-  if (!(await isActiveMentorOf(me.id, id))) notFound();
+  // Server-side guard in addition to RLS: only CURRENT mentees. The profile read is RLS-scoped
+  // too, so fetching it alongside the check leaks nothing and saves a round trip.
+  const [assigned, p] = await Promise.all([isActiveMentorOf(me.id, id), studentProfile(id)]);
+  if (!assigned || !p) notFound();
   const tab: Tab = (TABS as readonly string[]).includes(sp.tab ?? "") ? (sp.tab as Tab) : "overview";
-  const p = await studentProfile(id);
-  if (!p) notFound();
   const base = `/mentor/mentees/${id}`;
   const [a, t, settings, catalog, recs, pulseRows, threads, mentees] = await Promise.all([
     loadAcademics(id, p.department_id),

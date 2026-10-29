@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import * as React from "react";
 import { cn, fmt } from "@/lib/utils";
 
@@ -226,6 +226,8 @@ export function TrendLine({
       {valid.map((v, k) => {
         const prev = valid[k - 1];
         const delta = prev ? v.value - prev.value : null;
+        // round before choosing the sign so a 0.03 drop never prints as "-0.0"
+        const shown = delta == null ? 0 : Math.round(delta * 10) / 10;
         return (
           <g key={v.label} tabIndex={0} aria-label={`${v.label}: ${v.value}${unit}${delta != null ? `, ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} vs ${prev!.label}` : ""}`} className="outline-none">
             <title>{`${v.label}: ${v.value}${unit}`}</title>
@@ -236,10 +238,10 @@ export function TrendLine({
               stroke="#0F766E"
               strokeWidth="2.5"
             />
-            {delta != null && Math.abs(delta) >= 0.01 && (
-              <text x={x(v.i)} y={y(v.value) - 13} textAnchor="middle" fontSize="14" fontWeight="700" fill={delta >= 0 ? "#0B5D56" : "#B42E2E"} className="tnum">
-                {delta >= 0 ? "+" : ""}
-                {delta.toFixed(1)}
+            {delta != null && shown !== 0 && (
+              <text x={x(v.i)} y={y(v.value) - 13} textAnchor="middle" fontSize="14" fontWeight="700" fill={shown > 0 ? "#0B5D56" : "#B42E2E"} className="tnum">
+                {shown > 0 ? "+" : ""}
+                {shown.toFixed(1)}
               </text>
             )}
           </g>

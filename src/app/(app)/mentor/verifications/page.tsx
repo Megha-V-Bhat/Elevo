@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Avatar, Card, Chip } from "@/components/ui/display";
 import { EmptyState, PageHeader } from "@/components/ui/layout";
 import { TabStrip } from "@/components/ui/tabs";

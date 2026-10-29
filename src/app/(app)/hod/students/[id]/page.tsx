@@ -1,6 +1,6 @@
 import { ArrowLeft, Download, History, LayoutGrid } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { GrowthRings, TrendLine } from "@/components/charts";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,5 @@
 import { Document, Font, Image, Page, Path, Svg, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 /*
  * Student Mentoring Report (PDF). Data comes ONLY from verified/finalized records and
@@ -8,22 +7,21 @@ import { dirname, join } from "node:path";
  * no inputs for charts, insights, risk flags, Pulse, planner results or questions.
  */
 
-const require = createRequire(import.meta.url);
-const fontDir = (pkg: string) => join(dirname(require.resolve(`${pkg}/package.json`)), "files");
+// Vendored copies of the @fontsource files, read by path from the project root. Bundled
+// require.resolve() can't find node_modules in a production build; next.config.ts traces this folder.
+const FONT_DIR = join(process.cwd(), "src/server/pdf/fonts");
 let fontsReady = false;
 function registerFonts() {
   if (fontsReady) return;
-  const m = fontDir("@fontsource/manrope");
-  const b = fontDir("@fontsource/bricolage-grotesque");
   Font.register({
     family: "Manrope",
     fonts: [
-      { src: join(m, "manrope-latin-400-normal.woff"), fontWeight: 400 },
-      { src: join(m, "manrope-latin-600-normal.woff"), fontWeight: 600 },
-      { src: join(m, "manrope-latin-700-normal.woff"), fontWeight: 700 },
+      { src: join(FONT_DIR, "manrope-latin-400-normal.woff"), fontWeight: 400 },
+      { src: join(FONT_DIR, "manrope-latin-600-normal.woff"), fontWeight: 600 },
+      { src: join(FONT_DIR, "manrope-latin-700-normal.woff"), fontWeight: 700 },
     ],
   });
-  Font.register({ family: "Bricolage", fonts: [{ src: join(b, "bricolage-grotesque-latin-700-normal.woff"), fontWeight: 700 }] });
+  Font.register({ family: "Bricolage", fonts: [{ src: join(FONT_DIR, "bricolage-grotesque-latin-700-normal.woff"), fontWeight: 700 }] });
   Font.registerHyphenationCallback((w) => [w]);
   fontsReady = true;
 }

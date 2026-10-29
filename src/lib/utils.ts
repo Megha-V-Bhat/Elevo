@@ -33,6 +33,11 @@ export const greeting = (d = new Date()) => {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 };
 
-export const firstName = (name: string) => name.split(/\s+/)[0] || name;
+/** Name for a greeting: "Ananya Rao" → "Ananya", "Dr. Meera Iyer" → "Dr. Iyer" (a title alone isn't a name). */
+export const firstName = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length > 1 && /^(dr|prof|mr|mrs|ms)\.?$/i.test(parts[0])) return `${parts[0]} ${parts.at(-1)}`;
+  return parts[0] || name;
+};
 
 export const toNum = (v: unknown): number | null => (v == null || v === "" ? null : Number(v));

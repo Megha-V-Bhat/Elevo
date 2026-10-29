@@ -13,9 +13,9 @@ import { seedBase } from "./seed";
 loadEnv();
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const password = process.env.DEMO_PASSWORD;
-if (!url || !key || !password) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or DEMO_PASSWORD in .env.local");
+const passwords = { MENTOR: process.env.DEMO_MENTOR_PASSWORD, MENTEE: process.env.DEMO_STUDENT_PASSWORD };
+if (!url || !key || !passwords.MENTOR || !passwords.MENTEE) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_MENTOR_PASSWORD or DEMO_STUDENT_PASSWORD in .env.local");
   process.exit(1);
 }
 const db = createClient(url, key, { auth: { persistSession: false } });
@@ -63,7 +63,7 @@ const MENTORS: [string, string, string[]][] = [
 async function ensureUser(email: string, role: "MENTEE" | "MENTOR", departmentId: string) {
   const { data: existing } = await db.from("users").select("id").eq("email", email).maybeSingle();
   if (existing) return { id: existing.id as string, created: false };
-  const c = await db.auth.admin.createUser({ email, password, email_confirm: true });
+  const c = await db.auth.admin.createUser({ email, password: passwords[role], email_confirm: true });
   if (c.error || !c.data.user) throw new Error(`create ${email}: ${c.error?.message}`);
   ok(await db.from("users").insert({ id: c.data.user.id, email, role, status: "ACTIVE", department_id: departmentId, onboarding_completed_at: days(-60) }), `user ${email}`);
   return { id: c.data.user.id, created: true };
@@ -96,8 +96,9 @@ async function main() {
   const kinds = ["improving", "declining", "strong", "steady", "missing", "struggling"] as const;
   const studentIds: { id: string; name: string; kind: (typeof kinds)[number]; sem: number; mentor: string }[] = [];
   for (let i = 0; i < 60; i++) {
-    const name = `${FIRST[i % FIRST.length]} ${LAST[(i * 7) % LAST.length]}`;
-    const email = `${name.toLowerCase().replace(/\s+/g, ".")}${i >= FIRST.length ? i : ""}@demo.elevo.app`;
+    // Second pass over FIRST shifts the surname so all 60 names are distinct.
+    const name = `${FIRST[i % FIRST.length]} ${LAST[(i * 7 + Math.floor(i / FIRST.length) * 4) % LAST.length]}`;
+    const email = `${name.toLowerCase().replace(/\s+/g, ".")}@demo.elevo.app`;
     const u = await ensureUser(email, "MENTEE", departmentId);
     const sem = 3 + (i % 5);
     const kind = kinds[i % kinds.length];
@@ -110,9 +111,9 @@ async function main() {
       await db.from("student_profiles").upsert({
         user_id: u.id,
         full_name: name,
-        usn: `1EV${String(admission).slice(2)}CS${String(i + 1).padStart(3, "0")}`,
+        usn: `1EV${String(admission).slice(2)}IS${String(i + 1).padStart(3, "0")}`,
         department_id: departmentId,
-        program: "B.E. Computer Science & Engineering",
+        program: "B.E. Information Science & Engineering",
         current_semester: sem,
         section: i % 2 ? "B" : "A",
         admission_year: admission,
@@ -138,7 +139,10 @@ async function main() {
       const status = current ? "DRAFT" : s === sem - 1 && i % 3 === 0 ? "SUBMITTED" : s <= 2 ? "FINALIZED" : "VERIFIED";
       const { data: semRow } = await db
         .from("academic_semesters")
-        .insert({ student_id: u.id, semester_no: s, academic_year: `${admission + Math.floor((s - 1) / 2)}-${String(admission + Math.floor((s - 1) / 2) + 1).slice(2)}`, status, verified_by: status === "VERIFIED" || status === "FINALIZED" ? mentor : null, verified_at: status === "VERIFIED" || status === "FINALIZED" ? days(-200 + s * 20) : null, submitted_at: status === "SUBMITTED" ? days(-3) : null })
+        .upsert(
+          { student_id: u.id, semester_no: s, academic_year: `${admission + Math.floor((s - 1) / 2)}-${String(admission + Math.floor((s - 1) / 2) + 1).slice(2)}`, status, verified_by: status === "VERIFIED" || status === "FINALIZED" ? mentor : null, verified_at: status === "VERIFIED" || status === "FINALIZED" ? days(-200 + s * 20) : null, submitted_at: status === "SUBMITTED" ? days(-3) : null },
+          { onConflict: "student_id,semester_no" }
+        )
         .select("id")
         .single();
       const results = bySem(s).map((sub) => {
@@ -158,7 +162,7 @@ async function main() {
         if (!current) entries.push({ subject_key: sub.code, semester_no: s, credits: Number(sub.credits), points: g?.points ?? null });
         return { academic_semester_id: semRow!.id, subject_id: sub.id, mse_marks: marks.mse_marks, mse_max: 50, see_marks: marks.see_marks, see_max: 100, grade: g?.grade ?? null, grade_points: g?.points ?? null, result: g ? (g.passed ? "PASS" : "FAIL") : "PENDING", _credits: Number(sub.credits), _points: g?.points ?? null };
       });
-      ok(await db.from("student_subject_results").insert(results.map((x) => ({ academic_semester_id: x.academic_semester_id, subject_id: x.subject_id, mse_marks: x.mse_marks, mse_max: x.mse_max, see_marks: x.see_marks, see_max: x.see_max, grade: x.grade, grade_points: x.grade_points, result: x.result }))), "results");
+      ok(await db.from("student_subject_results").upsert(results.map((x) => ({ academic_semester_id: x.academic_semester_id, subject_id: x.subject_id, mse_marks: x.mse_marks, mse_max: x.mse_max, see_marks: x.see_marks, see_max: x.see_max, grade: x.grade, grade_points: x.grade_points, result: x.result })), { onConflict: "academic_semester_id,subject_id" }), "results");
       const sg = sgpa(results.map((r) => ({ credits: r._credits, points: r._points })));
       const cg = cgpa(entries);
       ok(
@@ -185,14 +189,14 @@ async function main() {
     const plans: Record<string, unknown>[] = [];
     for (const [i, s] of studentIds.entries()) {
       recs.push(
-        { student_id: s.id, mentor_id: s.mentor, kind: "FEEDBACK", category: "ACADEMIC_PROGRESS", title: s.kind === "declining" ? "Let's steady the SEE scores" : "Good consistency this semester", body: s.kind === "declining" ? "Your MSE marks were solid but SEE dropped in two subjects. Let's plan revision earlier this time." : "You're keeping a steady pace. Keep the weekly revision habit going.", visibility: "SHARED", include_in_report: true, created_at: days(-20) },
-        { student_id: s.id, mentor_id: s.mentor, kind: "GOAL", category: "STUDY_HABITS", title: "Weekly problem practice", body: "Two timed problem sets every week until SEE.", target: "60%+ in the weakest subject's SEE", steps: [{ label: "Pick the weakest subject", done: true }, { label: "Solve 2 past papers", done: i % 2 === 0 }, { label: "Review mistakes with mentor", done: false }], status: "IN_PROGRESS", due_date: days(30).slice(0, 10), review_date: days(7).slice(0, 10), visibility: "SHARED", include_in_report: i % 2 === 0, created_at: days(-14) },
-        { student_id: s.id, mentor_id: s.mentor, kind: "STRENGTH", category: "PERSONAL_DEVELOPMENT", title: pick(["Clear written answers", "Strong lab work", "Asks good questions", "Reliable team member"]), visibility: "SHARED", created_at: days(-30) },
-        { student_id: s.id, mentor_id: s.mentor, kind: "FEEDBACK", category: "CAREER_GUIDANCE", title: "Private note: discuss internship options", body: "Check interest in summer internships before next session.", visibility: "PRIVATE_MENTOR", created_at: days(-10) },
+        { student_id: s.id, mentor_id: s.mentor, kind: "FEEDBACK", category: "ACADEMIC_PROGRESS", title: s.kind === "declining" ? "Let's steady the SEE scores" : "Good consistency this semester", body: s.kind === "declining" ? "Your MSE marks were solid but SEE dropped in two subjects. Let's plan revision earlier this time." : "You're keeping a steady pace. Keep the weekly revision habit going.", status: "PENDING", source: "MANUAL", steps: [], visibility: "SHARED", include_in_report: true, created_at: days(-20) },
+        { student_id: s.id, mentor_id: s.mentor, kind: "GOAL", category: "STUDY_HABITS", title: "Weekly problem practice", body: "Two timed problem sets every week until SEE.", target: "60%+ in the weakest subject's SEE", steps: [{ label: "Pick the weakest subject", done: true }, { label: "Solve 2 past papers", done: i % 2 === 0 }, { label: "Review mistakes with mentor", done: false }], status: "IN_PROGRESS", source: "MANUAL", due_date: days(30).slice(0, 10), review_date: days(7).slice(0, 10), visibility: "SHARED", include_in_report: i % 2 === 0, created_at: days(-14) },
+        { student_id: s.id, mentor_id: s.mentor, kind: "STRENGTH", category: "PERSONAL_DEVELOPMENT", title: pick(["Clear written answers", "Strong lab work", "Asks good questions", "Reliable team member"]), body: "", status: "PENDING", source: "MANUAL", steps: [], visibility: "SHARED", include_in_report: false, created_at: days(-30) },
+        { student_id: s.id, mentor_id: s.mentor, kind: "FEEDBACK", category: "CAREER_GUIDANCE", title: "Private note: discuss internship options", body: "Check interest in summer internships before next session.", status: "PENDING", source: "MANUAL", steps: [], visibility: "PRIVATE_MENTOR", include_in_report: false, created_at: days(-10) },
       );
-      if (i % 3 === 0) recs.push({ student_id: s.id, mentor_id: s.mentor, kind: "ACTION_POINT", category: "ACADEMIC_PROGRESS", title: "Submit the pending lab record", status: "PENDING", due_date: days(-2).slice(0, 10), visibility: "SHARED", source: "SESSION", created_at: days(-9) });
+      if (i % 3 === 0) recs.push({ student_id: s.id, mentor_id: s.mentor, kind: "ACTION_POINT", category: "ACADEMIC_PROGRESS", title: "Submit the pending lab record", body: "", status: "PENDING", steps: [], due_date: days(-2).slice(0, 10), visibility: "SHARED", include_in_report: false, source: "SESSION", created_at: days(-9) });
       sess.push({ mentor_id: s.mentor, student_id: s.id, scheduled_at: days(-9), duration_min: 30, mode: "IN_PERSON", location_or_link: "Staff room, Block B", agenda: "Semester check-in", summary: "Reviewed MSE results and agreed on a revision plan.", action_items: [{ label: "Submit the pending lab record" }], status: "COMPLETED", next_follow_up_date: days(5).slice(0, 10) });
-      if (i % 2 === 0) sess.push({ mentor_id: s.mentor, student_id: s.id, scheduled_at: days(1 + (i % 6)), duration_min: 30, mode: i % 4 === 0 ? "ONLINE" : "IN_PERSON", location_or_link: i % 4 === 0 ? "https://meet.google.com/abc-defg-hij" : "Staff room, Block B", agenda: "Pre-SEE plan", status: "SCHEDULED" });
+      if (i % 2 === 0) sess.push({ mentor_id: s.mentor, student_id: s.id, scheduled_at: days(1 + (i % 6)), duration_min: 30, mode: i % 4 === 0 ? "ONLINE" : "IN_PERSON", location_or_link: i % 4 === 0 ? "https://meet.google.com/abc-defg-hij" : "Staff room, Block B", agenda: "Pre-SEE plan", action_items: [], status: "SCHEDULED" });
       // Pulse: 8–12 weeks with skips; a few low streaks and heavy+low-confidence cases
       for (let w = 0; w < 12; w++) {
         if (rnd() < 0.18 && w < 9) continue;
@@ -234,11 +238,13 @@ async function main() {
     for (const [i, s] of studentIds.slice(0, 24).entries()) {
       const status = (["OPEN", "OPEN", "ANSWERED", "RESOLVED"] as const)[i % 4];
       const created = days(-(1 + (i % 6)));
-      const { data: t } = await db.from("ask_threads").insert({ student_id: s.id, mentor_id_at_creation: s.mentor, title: pick(["How should I revise normalisation?", "Is it okay to take the ML elective?", "Struggling with recursion problems", "How do I prepare for the internship test?"]), status: "OPEN", created_at: created, last_activity_at: created }).select("id").single();
-      ok(await db.from("ask_messages").insert({ thread_id: t!.id, author_id: s.id, body: "I've tried the textbook examples but get stuck when the questions combine two ideas. Where should I start?", created_at: created }), "ask message");
-      if (status !== "OPEN") {
-        ok(await db.from("ask_messages").insert({ thread_id: t!.id, author_id: s.mentor, body: "Start from the simplest version and write out each step. Bring two attempts to our next session and we'll go through them.", created_at: days(-(i % 3)) }), "ask reply");
-        if (status === "RESOLVED") ok(await db.from("ask_threads").update({ status: "RESOLVED" }).eq("id", t!.id), "resolve");
+      const { data: t } = await db.from("ask_threads").insert({ student_id: s.id, mentor_id_at_creation: s.mentor, title: pick(["How should I revise normalisation?", "Is it okay to take the ML elective?", "Struggling with recursion problems", "How do I prepare for the internship test?"]), status: "OPEN", created_at: created, last_activity_at: created }).select("id").maybeSingle();
+      if (t?.id) {
+        ok(await db.from("ask_messages").insert({ thread_id: t.id, author_id: s.id, body: "I've tried the textbook examples but get stuck when the questions combine two ideas. Where should I start?", created_at: created }), "ask message");
+        if (status !== "OPEN") {
+          ok(await db.from("ask_messages").insert({ thread_id: t.id, author_id: s.mentor, body: "Start from the simplest version and write out each step. Bring two attempts to our next session and we'll go through them.", created_at: days(-(i % 3)) }), "ask reply");
+          if (status === "RESOLVED") ok(await db.from("ask_threads").update({ status: "RESOLVED" }).eq("id", t.id), "resolve");
+        }
       }
     }
 
@@ -252,11 +258,11 @@ async function main() {
 
   // One unassigned student for the board demo
   const extra = await ensureUser("new.student@demo.elevo.app", "MENTEE", departmentId);
-  if (extra.created) ok(await db.from("student_profiles").upsert({ user_id: extra.id, full_name: "Nisha Kamath", usn: "1EV26CS099", department_id: departmentId, program: "B.E. Computer Science & Engineering", current_semester: 1, section: "A", admission_year: 2026, expected_graduation_year: 2030, profile_completion: 60 }), "unassigned student");
+  if (extra.created) ok(await db.from("student_profiles").upsert({ user_id: extra.id, full_name: "Nisha Kamath", usn: "1EV26IS099", department_id: departmentId, program: "B.E. Information Science & Engineering", current_semester: 1, section: "A", admission_year: 2026, expected_graduation_year: 2030, profile_completion: 60 }), "unassigned student");
 
   writeFileSync(
     "DEMO.md",
-    `# Demo accounts\n\nAll demo passwords are the value of \`DEMO_PASSWORD\` in \`.env.local\` (never committed).\n\n| Role | Name | Email |\n|---|---|---|\n| HOD | (you) | value of SEED_HOD_EMAIL |\n${logins.join("\n")}\n| Student (unassigned) | Nisha Kamath | new.student@demo.elevo.app |\n\nThe dataset has 6 mentors, 61 students (one unassigned), 2–7 semesters of results each with improving, declining, strong, steady, missing and struggling patterns, mentoring records, sessions, 8–12 weeks of Pulse check-ins (with skipped weeks and a few self-reported low streaks), Ask threads in every status, saved planner targets and pending correction requests.\n`,
+    `# Demo accounts\n\nMentors sign in with \`DEMO_MENTOR_PASSWORD\` and students with \`DEMO_STUDENT_PASSWORD\` from \`.env.local\` (never committed). To change them, edit those values and run \`pnpm db:demo-passwords\`.\n\n| Role | Name | Email |\n|---|---|---|\n| HOD | (you) | value of SEED_HOD_EMAIL |\n${logins.join("\n")}\n| Student (unassigned) | Nisha Kamath | new.student@demo.elevo.app |\n\nThe dataset has 6 mentors, 61 students (one unassigned), 2–7 semesters of results each with improving, declining, strong, steady, missing and struggling patterns, mentoring records, sessions, 8–12 weeks of Pulse check-ins (with skipped weeks and a few self-reported low streaks), Ask threads in every status, saved planner targets and pending correction requests.\n`,
   );
   console.log(`✓ Demo data ready (${studentIds.length} students, ${mentorIds.length} mentors, HOD ${hodId}). See DEMO.md.`);
 }

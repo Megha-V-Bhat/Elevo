@@ -1,6 +1,6 @@
 import { ArrowLeft, Clock, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { Card, Chip, StatusPill } from "@/components/ui/display";
 import { EmptyState, PageHeader } from "@/components/ui/layout";

@@ -1,5 +1,5 @@
 import { CircleHelp, Compass, Leaf, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ChartFrame, CreditPath, GrowthRings, PairedBars, StackedBar, SubjectBloom, TrendLine } from "@/components/charts";
 import { Card, DeltaChip, IconTile } from "@/components/ui/display";
 import { Bento, EmptyState } from "@/components/ui/layout";

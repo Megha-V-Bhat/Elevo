@@ -5,7 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { Command } from "cmdk";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Bell, Check, Clock, LogOut, MessageCircleQuestion, Search, Settings, User } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Logo } from "@/components/brand/logo";

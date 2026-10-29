@@ -73,7 +73,7 @@ export function MarksGrid({
   }, []);
 
   const save = useCallback(
-    async (data: GridRow[]) => {
+    async (data: GridRow[]): Promise<boolean> => {
       setState("saving");
       const r = await saveResults(
         semesterId,
@@ -87,7 +87,8 @@ export function MarksGrid({
           fe[`${data[Number(i)]?.id}.${f}`] = v;
         }
         setErrors(fe);
-        return toast.error(r.error.message);
+        toast.error(r.error.message);
+        return false;
       }
       setErrors({});
       setState("saved");
@@ -95,6 +96,7 @@ export function MarksGrid({
         localStorage.removeItem(storageKey);
       } catch {}
       router.refresh();
+      return true;
     },
     [semesterId, router, storageKey],
   );
@@ -137,6 +139,20 @@ export function MarksGrid({
     return cr ? cp.reduce((a, x) => a + (x.c as number) * (x.p as number), 0) / cr : null;
   }, [rows, derived]);
 
+  // What each subject still needs. "empty" blocks submitting (the server rejects it too).
+  const status = rows.map((r) => {
+    if (r.grade_points != null) return { kind: "done" as const, missing: "" };
+    const need = [r.has_mse && r.mse_marks == null && "MSE", r.has_see && r.see_marks == null && "SEE"].filter(Boolean) as string[];
+    const has = (r.has_mse && r.mse_marks != null) || (r.has_see && r.see_marks != null);
+    return { kind: need.length === 0 ? ("done" as const) : has ? ("partial" as const) : ("empty" as const), missing: need.join(" and ") };
+  });
+  const done = status.filter((s) => s.kind === "done").length;
+  const empty = status.filter((s) => s.kind === "empty").length;
+  const partial = status.filter((s) => s.kind === "partial").length;
+  // Grade points are normally calculated; a row shows the input only when the student overrides.
+  const [overrides, setOverrides] = useState<Set<string>>(() => new Set());
+  const showPoints = (r: GridRow) => r.grade_points != null || overrides.has(r.id);
+
   // Spreadsheet navigation: Enter moves down, arrows move, paste fills a block
   const focusCell = (r: number, c: number) => document.querySelector<HTMLInputElement>(`[data-cell="${r}-${c}"]`)?.focus();
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>, r: number, c: number) => {
@@ -173,22 +189,71 @@ export function MarksGrid({
     const disabled = (cell === "mse_marks" && !row.has_mse) || (cell === "see_marks" && !row.has_see);
     const errKey = `${row.id}.${cell}`;
     const outOfRange = row[cell] != null && max != null && (row[cell] as number) > max;
+    const suffix = cell !== "grade_points" && !disabled && max != null ? `/${max}` : null;
+    const msg = outOfRange ? `Max ${max}` : errors[errKey];
     return (
-      <Input
-        data-cell={`${i}-${ci}`}
-        aria-label={`${row.name} ${cell === "mse_marks" ? "MSE" : cell === "see_marks" ? "SEE" : "grade points"}${max ? ` out of ${max}` : ""}`}
-        inputMode="decimal"
-        disabled={disabled}
-        value={row[cell] ?? ""}
-        aria-invalid={outOfRange || !!errors[errKey] || undefined}
-        placeholder={disabled ? "n/a" : cell === "grade_points" ? (derived[i].points != null ? String(derived[i].points) : "auto") : `/${max ?? "?"}`}
-        onChange={(e) => update(row.id, cell, parse(e.target.value))}
-        onKeyDown={(e) => onKey(e, i, ci)}
-        onPaste={(e) => onPaste(e, i, ci)}
-        className={cn("h-10 w-full min-w-16 px-2.5 text-right tnum", cls)}
-      />
+      <div>
+        <div className="relative">
+          <Input
+            data-cell={`${i}-${ci}`}
+            aria-label={`${row.name} ${cell === "mse_marks" ? "MSE" : cell === "see_marks" ? "SEE" : "grade points"}${max ? ` out of ${max}` : ""}`}
+            inputMode="decimal"
+            disabled={disabled}
+            value={row[cell] ?? ""}
+            aria-invalid={!!msg || undefined}
+            placeholder={disabled ? "n/a" : cell === "grade_points" ? "0–10" : undefined}
+            onChange={(e) => update(row.id, cell, parse(e.target.value))}
+            onKeyDown={(e) => onKey(e, i, ci)}
+            onPaste={(e) => onPaste(e, i, ci)}
+            className={cn("h-10 w-full min-w-16 px-2.5 text-right tnum", suffix && "pr-12", cls)}
+          />
+          {suffix && (
+            <span aria-hidden className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-small text-ink-500 tnum">
+              {suffix}
+            </span>
+          )}
+        </div>
+        {msg && <p className="mt-1 text-right text-[12px] font-semibold text-coral-700">{msg}</p>}
+      </div>
     );
   };
+
+  const removeRow = (r: GridRow) =>
+    toast(`Remove ${r.name}?`, {
+      description: "Its marks in this semester will be deleted.",
+      action: {
+        label: "Remove",
+        onClick: () =>
+          start(async () => {
+            const res = await removeResult(r.id);
+            if (!res.ok) return void toast.error(res.error.message);
+            setRows((x) => x.filter((y) => y.id !== r.id));
+            toast.success(`${r.name} removed`);
+          }),
+      },
+    });
+
+  const submit = () =>
+    start(async () => {
+      // Flush pending edits first so a quick click after typing isn't lost or blocked.
+      if (state === "dirty" || state === "error") {
+        clearTimeout(timer.current);
+        if (!(await save(rows))) return;
+      }
+      const r = await setSemesterStatus(semesterId, "SUBMITTED");
+      if (!r.ok) return void toast.error(r.error.message);
+      toast.success("Submitted to your mentor for verification");
+      router.refresh();
+    });
+
+  const submitHint =
+    rows.length === 0
+      ? "Add your subjects first."
+      : empty
+        ? `${empty} subject${empty > 1 ? "s have" : " has"} no marks yet.`
+        : partial
+          ? `${partial} subject${partial > 1 ? "s are" : " is"} missing some marks. You can still submit.`
+          : "All subjects have marks. Your mentor will check them against your marks card.";
 
   const statusLabel =
     state === "saving" ? "Saving…" : state === "dirty" ? "Unsaved changes" : state === "error" ? "Couldn't save — fix the highlighted cells" : state === "saved" ? "All changes saved" : "Changes save automatically";
@@ -196,14 +261,32 @@ export function MarksGrid({
   const m = rows[mobileIdx];
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <p role="status" aria-live="polite" className={cn("inline-flex items-center gap-1.5 text-small font-semibold", state === "error" ? "text-coral-700" : "text-ink-500")}>
-          <Cloud className={cn("size-4", state === "saving" && "animate-pulse")} aria-hidden /> {statusLabel}
-        </p>
-        <span className="text-small text-ink-500">
-          Draft SGPA: <span className="font-semibold text-ink-900 tnum">{sgpaPreview == null ? "not enough data" : sgpaPreview.toFixed(2)}</span>
-        </span>
-        <p className="hidden text-small text-ink-500 lg:ml-auto lg:block">Tip: paste a block straight from Excel or Sheets. Enter moves down.</p>
+      <div className="mb-4 rounded-card border border-line bg-surface p-4 shadow-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <p className="font-semibold text-ink-900">
+            <span className="tnum">{done}</span> of <span className="tnum">{rows.length}</span> subjects complete
+          </p>
+          <p className="text-small text-ink-500">
+            Draft SGPA <span className="font-display text-h3 font-semibold text-ink-900 tnum">{sgpaPreview == null ? "—" : sgpaPreview.toFixed(2)}</span>
+            {sgpaPreview == null && <span className="ml-1">(appears when every subject has marks)</span>}
+          </p>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Subjects complete"
+          aria-valuemin={0}
+          aria-valuemax={rows.length || 1}
+          aria-valuenow={done}
+          className="mt-2 h-2 overflow-hidden rounded-full bg-canvas-sunk"
+        >
+          <div className="h-full rounded-full bg-pine-600 transition-[width] duration-[360ms] ease-grow" style={{ width: `${rows.length ? (done / rows.length) * 100 : 0}%` }} />
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <p role="status" aria-live="polite" className={cn("inline-flex items-center gap-1.5 text-small font-semibold", state === "error" ? "text-coral-700" : "text-ink-500")}>
+            <Cloud className={cn("size-4", state === "saving" && "animate-pulse")} aria-hidden /> {statusLabel}
+          </p>
+          <p className="hidden text-small text-ink-500 lg:ml-auto lg:block">Type a mark and press Enter to move down. You can also paste a block from Excel or Sheets.</p>
+        </div>
       </div>
 
       {/* Desktop / tablet grid */}
@@ -213,9 +296,9 @@ export function MarksGrid({
             <tr>
               <th scope="col" className="px-4 py-3 font-semibold">Subject</th>
               <th scope="col" className="w-16 px-2 py-3 text-right font-semibold">Credits</th>
-              <th scope="col" className="w-28 px-2 py-3 text-right font-semibold">MSE</th>
-              <th scope="col" className="w-28 px-2 py-3 text-right font-semibold">SEE</th>
-              <th scope="col" className="w-20 px-2 py-3 text-right font-semibold">Total %</th>
+              <th scope="col" className="w-32 px-2 py-3 text-right font-semibold">MSE marks</th>
+              <th scope="col" className="w-32 px-2 py-3 text-right font-semibold">SEE marks</th>
+              <th scope="col" className="w-28 px-2 py-3 text-right font-semibold">Total %</th>
               <th scope="col" className="w-16 px-2 py-3 text-right font-semibold">Grade</th>
               <th scope="col" className="w-28 px-2 py-3 text-right font-semibold">Points</th>
               <th scope="col" className="w-12 px-2 py-3"><span className="sr-only">Remove</span></th>
@@ -223,31 +306,64 @@ export function MarksGrid({
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.id} className="border-t border-line align-middle hover:bg-canvas/60">
-                <td className="px-4 py-2">
-                  <span className="font-semibold text-ink-900">{r.name}</span>
-                  <span className="block text-ink-500">{r.code}</span>
+              <tr key={r.id} className="border-t border-line align-top hover:bg-canvas/60">
+                <td className="px-4 py-2.5">
+                  <span className="flex items-center gap-2 font-semibold text-ink-900">
+                    <span
+                      aria-hidden
+                      className={cn("size-2 shrink-0 rounded-full", status[i].kind === "done" ? "bg-mint-500" : status[i].kind === "partial" ? "bg-butter-400" : "bg-line-strong")}
+                    />
+                    {r.name}
+                  </span>
+                  <span className="block pl-4 text-ink-500">
+                    {r.code}
+                    <span className="sr-only">, {status[i].kind === "done" ? "complete" : status[i].kind === "partial" ? `needs ${status[i].missing}` : "no marks yet"}</span>
+                  </span>
                 </td>
-                <td className="px-2 py-2 text-right tnum text-ink-700">{r.credits ?? "—"}</td>
+                <td className="px-2 py-4 text-right tnum text-ink-700">{r.credits ?? "—"}</td>
                 <td className="px-2 py-2">{cellInput(r, i, "mse_marks", 0)}</td>
                 <td className="px-2 py-2">{cellInput(r, i, "see_marks", 1)}</td>
-                <td className="px-2 py-2 text-right tnum text-ink-900" title={derived[i].note ?? undefined}>{derived[i].pct == null ? "—" : `${fmt(derived[i].pct, 1)}%`}</td>
-                <td className="px-2 py-2 text-right font-semibold text-ink-900">{r.grade ?? derived[i].grade ?? "—"}</td>
-                <td className="px-2 py-2">{cellInput(r, i, "grade_points", 2)}</td>
+                <td className="px-2 py-4 text-right tnum" title={derived[i].note ?? undefined}>
+                  {derived[i].pct != null ? (
+                    <span className="text-ink-900">{fmt(derived[i].pct, 1)}%</span>
+                  ) : status[i].kind !== "done" ? (
+                    <span className={cn("text-[12px] font-semibold", status[i].kind === "empty" ? "text-coral-700" : "text-ink-500")}>Add {status[i].missing}</span>
+                  ) : (
+                    <span className="text-ink-500">—</span>
+                  )}
+                </td>
+                <td className="px-2 py-4 text-right font-semibold text-ink-900">{r.grade ?? derived[i].grade ?? "—"}</td>
                 <td className="px-2 py-2 text-right">
-                  <Button
-                    variant="ghost"
-                    size="iconSm"
-                    aria-label={`Remove ${r.name}`}
-                    onClick={() =>
-                      start(async () => {
-                        const res = await removeResult(r.id);
-                        if (!res.ok) return void toast.error(res.error.message);
-                        setRows((x) => x.filter((y) => y.id !== r.id));
-                        toast.success(`${r.name} removed`);
-                      })
-                    }
-                  >
+                  {showPoints(r) ? (
+                    <div>
+                      {cellInput(r, i, "grade_points", 2)}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOverrides((s) => new Set([...s].filter((x) => x !== r.id)));
+                          update(r.id, "grade_points", null);
+                        }}
+                        className="mt-1 inline-flex min-h-8 items-center text-[12px] font-semibold text-pine-600 hover:underline"
+                      >
+                        Use marks instead
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex min-h-10 flex-col items-end justify-center">
+                      <span className="font-semibold text-ink-900 tnum">{derived[i].points ?? "—"}</span>
+                      <button
+                        type="button"
+                        onClick={() => setOverrides((s) => new Set(s).add(r.id))}
+                        aria-label={`Enter grade points for ${r.name} yourself`}
+                        className="inline-flex min-h-8 items-center text-[12px] font-semibold text-pine-600 hover:underline"
+                      >
+                        Enter points
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td className="px-2 py-2 text-right">
+                  <Button variant="ghost" size="iconSm" aria-label={`Remove ${r.name}`} onClick={() => removeRow(r)}>
                     <Trash2 />
                   </Button>
                 </td>
@@ -329,22 +445,14 @@ export function MarksGrid({
         >
           <Trash2 /> Delete semester
         </Button>
-        <Button
-          className="sm:ml-auto"
-          size="lg"
-          loading={pending}
-          disabled={state === "saving" || state === "dirty" || rows.length === 0}
-          onClick={() =>
-            start(async () => {
-              const r = await setSemesterStatus(semesterId, "SUBMITTED");
-              if (!r.ok) return void toast.error(r.error.message);
-              toast.success("Submitted to your mentor for verification");
-              router.refresh();
-            })
-          }
-        >
-          <Send /> Submit for verification
-        </Button>
+        <div className="flex flex-col gap-1.5 sm:ml-auto sm:items-end">
+          <Button size="lg" loading={pending} disabled={state === "saving" || rows.length === 0 || empty > 0} aria-describedby="submit-hint" onClick={submit}>
+            <Send /> Submit for verification
+          </Button>
+          <p id="submit-hint" className={cn("text-small sm:text-right", empty ? "font-semibold text-coral-700" : "text-ink-500")}>
+            {submitHint}
+          </p>
+        </div>
       </div>
 
       <AddSubjectSheet open={addOpen} onOpenChange={setAddOpen} semesterId={semesterId} semesterNo={semesterNo} catalog={catalog.filter((c) => !rows.some((r) => r.subject_id === c.id))} />

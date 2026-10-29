@@ -1,6 +1,6 @@
 import { ArrowRight, CalendarDays, ClipboardCheck, Inbox, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Avatar, Card, CardHeader } from "@/components/ui/display";
 import { Bento, EmptyState, HeroCard, PageHeader, Section, StatTile } from "@/components/ui/layout";
 import { FlagChips } from "@/features/mentor/flags";

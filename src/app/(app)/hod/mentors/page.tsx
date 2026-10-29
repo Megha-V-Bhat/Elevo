@@ -1,6 +1,6 @@
 import { Search, UserPlus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, Card, Chip, Meter } from "@/components/ui/display";
 import { Input, Select } from "@/components/ui/form";

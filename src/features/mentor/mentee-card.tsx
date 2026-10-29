@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { PulseStrip, Sparkline } from "@/components/charts";
 import { Avatar, DeltaChip } from "@/components/ui/display";
 import { fmt } from "@/lib/utils";

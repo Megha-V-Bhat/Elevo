@@ -1,5 +1,5 @@
 import { ArrowRight, BookOpenCheck, FileLock2, GraduationCap, HeartPulse, LayoutGrid, Lock, MessageCircleQuestion, Sparkles, Target, UserRoundCheck, Users } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Logo } from "@/components/brand/logo";
 import { GrowthRings, PulseStrip } from "@/components/charts";
 import { Illustration } from "@/components/illustrations";

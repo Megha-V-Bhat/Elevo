@@ -26,7 +26,7 @@ const ok = <T>(r: { data: T; error: { message: string } | null }, what: string) 
 };
 
 export async function seedBase() {
-  const dept = ok(await db.from("departments").upsert({ code: "CSE", name: "Computer Science & Engineering", institution: "Your Institution" }, { onConflict: "code" }).select("id").single(), "department")!;
+  const dept = ok(await db.from("departments").upsert({ code: "ISE", name: "Information Science & Engineering", institution: "NMAM Institute of Technology, Nitte" }, { onConflict: "code" }).select("id").single(), "department")!;
   ok(await db.from("sections").upsert(["A", "B"].map((name) => ({ department_id: dept.id, name })), { onConflict: "department_id,name" }), "sections");
   ok(await db.from("academic_years").upsert({ label: "2026-27", starts_on: "2026-08-01", ends_on: "2027-07-31", is_current: true }, { onConflict: "label" }), "academic year");
 
@@ -57,7 +57,7 @@ export async function seedBase() {
     pulse_week_start: 1,
     pulse_reminder_enabled: true,
     optional_profile_fields: { dob: false, gender: false, address: false },
-    institution: "Your Institution",
+    institution: "NMAM Institute of Technology, Nitte",
   };
   for (const [k, value] of Object.entries(settings)) {
     const { data } = await db.from("app_settings").select("key").eq("key", k).maybeSingle();

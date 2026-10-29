@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Elevo — Mentoring that grows with you">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F3FBF7"/>
+      <stop offset="1" stop-color="#E6F6EF"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="400" rx="28" fill="url(#bg)"/>
+  <circle cx="1130" cy="70" r="150" fill="#EDE9FE" opacity=".7"/>
+  <circle cx="1210" cy="360" r="120" fill="#FEF3C7" opacity=".8"/>
+  <circle cx="980" cy="330" r="70" fill="#D1FAE5"/>
+  <!-- growth rings -->
+  <g fill="none" stroke="#0F766E" stroke-linecap="round" transform="translate(1040 210)">
+    <circle r="40" stroke-width="5" stroke-dasharray="180 400" opacity=".9"/>
+    <circle r="70" stroke-width="5" stroke-dasharray="320 600" opacity=".55"/>
+    <circle r="100" stroke-width="5" stroke-dasharray="470 800" opacity=".3"/>
+  </g>
+  <!-- mark -->
+  <g transform="translate(96 108) scale(2.6)">
+    <path d="M32 60 C32 50 32 42 32 31" fill="none" stroke="#0F766E" stroke-width="5" stroke-linecap="round"/>
+    <path d="M31 43 C17 44 7 34 7 18 C22 18 31 28 31 43 Z" fill="url(#leaf)"/>
+    <path d="M33 33 C33 22 41 13 56 13 C56 26 47 34 33 33 Z" fill="#34D399"/>
+  </g>
+  <text x="290" y="200" font-family="'Bricolage Grotesque','Segoe UI',system-ui,sans-serif" font-size="104" font-weight="800" fill="#0B3B36" letter-spacing="-3">Elevo</text>
+  <text x="294" y="252" font-family="'Manrope','Segoe UI',system-ui,sans-serif" font-size="32" font-weight="600" fill="#0B5D56">Mentoring that grows with you.</text>
+  <text x="294" y="300" font-family="'Manrope','Segoe UI',system-ui,sans-serif" font-size="20" fill="#3F5F5A">Academic mentoring for college departments · Students · Mentors · HOD</text>
+</svg>

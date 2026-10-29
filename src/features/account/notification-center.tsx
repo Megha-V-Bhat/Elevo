@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCheck } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { NotificationList } from "@/components/shell/topbar";

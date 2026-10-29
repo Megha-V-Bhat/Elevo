@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Card } from "@/components/ui/display";
 import { KeyValue, PageHeader } from "@/components/ui/layout";
 import { PasswordForm, PrefsForm, SessionsCard } from "@/features/account/account-forms";

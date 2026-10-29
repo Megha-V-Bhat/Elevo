@@ -25,16 +25,18 @@ export const HOME: Record<Role, string> = { MENTEE: "/mentee", MENTOR: "/mentor"
  */
 export const currentUser = cache(async (): Promise<SessionUser | null> => {
   const supabase = await db();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
-  const { data: u } = await supabase
-    .from("users")
-    .select("id, email, role, status, department_id, onboarding_completed_at")
-    .eq("id", auth.user.id)
-    .maybeSingle();
+  // The signed token only proves who is calling; role and status come from public.users.
+  // getClaims verifies it locally, and the three reads go out together: one round trip.
+  const { data: auth } = await supabase.auth.getClaims();
+  const id = auth?.claims.sub;
+  if (!id) return null;
+  const [{ data: u }, { data: sp }, { data: mp }] = await Promise.all([
+    supabase.from("users").select("id, email, role, status, department_id, onboarding_completed_at").eq("id", id).maybeSingle(),
+    supabase.from("student_profiles").select("full_name, avatar_path").eq("user_id", id).maybeSingle(),
+    supabase.from("mentor_profiles").select("full_name, avatar_path").eq("user_id", id).maybeSingle(),
+  ]);
   if (!u) return null;
-  const table = u.role === "MENTEE" ? "student_profiles" : "mentor_profiles";
-  const { data: p } = await supabase.from(table).select("full_name, avatar_path").eq("user_id", u.id).maybeSingle();
+  const p = u.role === "MENTEE" ? sp : mp;
   return {
     ...(u as Omit<SessionUser, "name" | "avatar_path">),
     name: p?.full_name || u.email.split("@")[0],

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bookmark, X } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";

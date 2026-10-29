@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Download, FileSpreadsheet, Upload } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Illustration } from "@/components/illustrations";

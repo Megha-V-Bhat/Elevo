@@ -1,5 +1,5 @@
 import { CalendarCheck2, CheckCircle2, GraduationCap, Lightbulb, MessageCircleQuestion, Target } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Card } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/layout";
 import { fmtDate } from "@/lib/dates";

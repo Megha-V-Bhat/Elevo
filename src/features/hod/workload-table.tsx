@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Avatar, Meter } from "@/components/ui/display";
 import { fmtDate } from "@/lib/dates";
 import { fmt } from "@/lib/utils";

@@ -1,6 +1,6 @@
 import { ArrowRight, Flag, GraduationCap, UserMinus, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ChartFrame, CoverageDonut, GroupedBars } from "@/components/charts";
 import { Avatar, Card, CardHeader, Meter } from "@/components/ui/display";
 import { Bento, EmptyState, HeroCard, PageHeader, StatTile } from "@/components/ui/layout";
@@ -17,10 +17,14 @@ export const metadata: Metadata = { title: "Home" };
 export default async function HodHome({ searchParams }: { searchParams: Promise<{ sem?: string; section?: string }> }) {
   const me = await requirePage("HOD");
   const sp = await searchParams;
-  const [ids, mentors, asg] = await Promise.all([allStudentIds(), mentorActivity(), activeAssignments()]);
-  const entries = await roster(ids, false, false);
   const supabase = await db();
-  const { data: dept } = await supabase.from("departments").select("name").eq("id", me.department_id).maybeSingle();
+  const [ids, mentors, asg, { data: dept }] = await Promise.all([
+    allStudentIds(),
+    mentorActivity(),
+    activeAssignments(),
+    supabase.from("departments").select("name").eq("id", me.department_id).maybeSingle(),
+  ]);
+  const entries = await roster(ids, false, false);
   const filtered = entries.filter((e) => (!sp.sem || String(e.profile.current_semester) === sp.sem) && (!sp.section || e.profile.section === sp.section));
   const assigned = new Set(asg.map((a) => a.student_id));
   const unassigned = filtered.filter((e) => !assigned.has(e.profile.user_id));

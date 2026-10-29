@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/layout";
 import { ReplyBox, ResolveButton } from "@/features/ask/composer";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { cn } from "@/lib/utils";
 
 /** Chip-style tab strip with the growing mint "sprout" underline on the active chip. URL-driven, no JS. */

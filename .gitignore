@@ -51,3 +51,8 @@ next-env.d.ts
 # local logs
 *.log
 .shots/
+
+# local-only material
+/report/
+/supabase/.temp/
+*.docx

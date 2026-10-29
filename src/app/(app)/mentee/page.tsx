@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpen, CalendarDays, HeartPulse, MessageCircleQuestion, Sparkles, Target } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { CreditPath, GrowthRings, PulseStrip, RingLegend, TrendLine } from "@/components/charts";
 import { Card, CardHeader, Chip, DeltaChip, Meter, StatusPill } from "@/components/ui/display";
 import { Bento, EmptyState, HeroCard, PageHeader } from "@/components/ui/layout";

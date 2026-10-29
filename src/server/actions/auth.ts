@@ -2,12 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { SITE_URL } from "@/lib/env";
+import { SITE_URL, hasSupabase } from "@/lib/env";
 import { adminDb } from "../admin/client";
 import { rateLimit } from "../admin/ratelimit";
 import { HOME, type Role } from "../authz";
 import { AppError, handle } from "../result";
 import { db } from "../supabase";
+
+const DB_NOT_CONFIGURED = "Database is not connected. Add your Supabase credentials to .env.local to enable authentication.";
 
 const email = z.string().trim().toLowerCase().email("Enter a valid email address");
 const password = z
@@ -25,6 +27,7 @@ export async function signIn(_: unknown, form: FormData) {
       email: form.get("email"),
       password: form.get("password"),
     });
+    if (!hasSupabase) throw new AppError("UNAUTHENTICATED", DB_NOT_CONFIGURED);
     if (!(await rateLimit("login", input.email, 8, 600)))
       throw new AppError("RATE_LIMITED", "Too many attempts. Wait 10 minutes and try again, or reset your password.");
     const supabase = await db();
@@ -48,6 +51,7 @@ export async function signIn(_: unknown, form: FormData) {
 
 export async function requestPasswordReset(_: unknown, form: FormData) {
   return handle(async () => {
+    if (!hasSupabase) throw new AppError("UNAUTHENTICATED", DB_NOT_CONFIGURED);
     const e = email.parse(form.get("email"));
     if (!(await rateLimit("reset", e, 3, 3600))) throw new AppError("RATE_LIMITED", "Too many requests. Try again in an hour.");
     const supabase = await db();
@@ -59,6 +63,7 @@ export async function requestPasswordReset(_: unknown, form: FormData) {
 
 export async function updatePassword(_: unknown, form: FormData) {
   const res = await handle(async () => {
+    if (!hasSupabase) throw new AppError("UNAUTHENTICATED", DB_NOT_CONFIGURED);
     const input = z
       .object({ password, confirm: z.string() })
       .refine((v) => v.password === v.confirm, { message: "Passwords don't match", path: ["confirm"] })

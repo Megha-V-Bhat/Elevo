@@ -29,7 +29,7 @@ These steps need your accounts and secrets, so they're manual. Never paste secre
 3. Assign the student to the mentor. As the student: Pulse check-in, ask a question, save and share a planner target. As the mentor: see all three and reply.
 4. Reassign the student to another mentor. The first mentor must no longer open the student, their Pulse or their question (404/403).
 5. As the new mentor, download the PDF: no charts, insights, Pulse, planner or questions.
-6. Run `E2E_BASE_URL=https://<app> E2E_MENTEE_EMAIL=… E2E_MENTOR_EMAIL=… E2E_PASSWORD=… pnpm test:e2e`.
+6. Run `E2E_BASE_URL=https://<app> E2E_MENTEE_EMAIL=… E2E_MENTOR_EMAIL=… E2E_MENTEE_PASSWORD=… E2E_MENTOR_PASSWORD=… pnpm test:e2e`.
 
 ## 4. Keep it healthy
 - Free Supabase projects pause after inactivity; restore from the dashboard or upgrade for real use.

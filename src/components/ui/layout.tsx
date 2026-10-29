@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Illustration, type IllustrationName } from "@/components/illustrations";

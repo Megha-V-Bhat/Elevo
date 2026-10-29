@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "26mb" } },
   serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
+  outputFileTracingIncludes: { "/api/reports/**": ["./src/server/pdf/fonts/**"] },
   async headers() {
     return [
       {

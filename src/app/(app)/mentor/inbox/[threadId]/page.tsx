@@ -1,6 +1,6 @@
 import { ArrowLeft, Link2 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/display";
 import { PageHeader } from "@/components/ui/layout";

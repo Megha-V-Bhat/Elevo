@@ -5,7 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { LayoutGrid, MoreHorizontal, Plus, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Role } from "@/server/authz";

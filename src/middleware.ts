@@ -24,9 +24,11 @@ export async function middleware(req: NextRequest) {
       },
     },
   });
-  const { data } = await supabase.auth.getUser();
+  // Verifies the ES256 access token locally (JWKS cached) and refreshes it when expired;
+  // no Auth round trip on every request.
+  const { data } = await supabase.auth.getClaims();
   const path = req.nextUrl.pathname;
-  if (!data.user && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
+  if (!data?.claims && PROTECTED.some((p) => path === p || path.startsWith(`${p}/`))) {
     const to = req.nextUrl.clone();
     to.pathname = "/login";
     to.search = `?next=${encodeURIComponent(path)}`;
