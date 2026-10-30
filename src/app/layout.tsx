@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Manrope } from "next/font/google";
+import { HashForwarder } from "@/app/auth/callback/hash-forwarder";
 import { Toaster } from "@/components/feedback/toaster";
 import { SITE_URL } from "@/lib/env";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         {children}
         <Toaster />
+        <HashForwarder />
       </body>
     </html>
   );

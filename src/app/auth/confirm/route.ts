@@ -10,6 +10,15 @@ export async function GET(req: NextRequest) {
   const code = url.searchParams.get("code");
   const next = url.searchParams.get("next");
   const dest = next && /^\/(?!\/)/.test(next) ? next : type === "invite" ? "/accept-invite" : "/reset-password";
+  // No token in the query: the link may carry the session in the #fragment (Supabase's default
+  // templates). Browsers keep the fragment across redirects, so hand over to the client page.
+  if (!tokenHash && !code) {
+    const cb = url.clone();
+    cb.search = "";
+    cb.pathname = "/auth/callback";
+    cb.searchParams.set("next", dest);
+    return NextResponse.redirect(cb);
+  }
   const supabase = await db();
   const ok = tokenHash && type
     ? !(await supabase.auth.verifyOtp({ type, token_hash: tokenHash })).error
