@@ -151,7 +151,7 @@ export async function commitImport(jobId: string, opts: { duplicates: "skip" | "
         if (r.status === "duplicate") continue; // accounts are never overwritten by import
         try {
           const d = r.data as Record<string, string | number | undefined>;
-          const id =
+          const { id } =
             kind === "students"
               ? await createInvitedUser(hod.department_id, String(d.email), "MENTEE", String(d.full_name), opts.sendInvites, {
                   usn: d.usn,

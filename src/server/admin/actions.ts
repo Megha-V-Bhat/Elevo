@@ -9,7 +9,7 @@ import { requireRole } from "../authz";
 import { AppError, handle, must } from "../result";
 import { db } from "../supabase";
 import { adminDb } from "./client";
-import { createInvitedUser } from "./users";
+import { createInvitedUser, emailFailure, invitationLink } from "./users";
 
 const uuid = z.string().uuid();
 
@@ -18,7 +18,8 @@ export async function inviteUser(input: unknown) {
   return handle(async () => {
     const hod = await requireRole("HOD");
     const v = inviteInput.parse(input);
-    return createInvitedUser(hod.department_id, v.email, v.role, v.full_name, true);
+    const { link, emailError } = await createInvitedUser(hod.department_id, v.email, v.role, v.full_name, true);
+    return { link, emailError };
   });
 }
 
@@ -30,8 +31,20 @@ export async function resendInvite(userId: string) {
     if (!u) throw new AppError("NOT_FOUND", "User not found.");
     if (u.status !== "INVITED") throw new AppError("CONFLICT", "This person has already activated their account.");
     const { error } = await adminDb().auth.resetPasswordForEmail(u.email, { redirectTo: `${SITE_URL}/auth/confirm?next=/accept-invite` });
-    if (error) throw new AppError("INTERNAL", "We couldn't resend the invite. Try again in a minute.");
+    if (error) throw new AppError("INTERNAL", `${emailFailure(error)} Use "Copy invite link" to share it yourself.`);
     return true;
+  });
+}
+
+/** A fresh one-time link for someone who hasn't activated yet, for the HOD to share directly. */
+export async function copyInviteLink(userId: string) {
+  return handle(async () => {
+    await requireRole("HOD");
+    const supabase = await db();
+    const { data: u } = await supabase.from("users").select("email, status").eq("id", uuid.parse(userId)).maybeSingle();
+    if (!u) throw new AppError("NOT_FOUND", "User not found.");
+    if (u.status !== "INVITED") throw new AppError("CONFLICT", "This person has already activated their account.");
+    return (await invitationLink(u.email, "recovery")).link;
   });
 }
 
