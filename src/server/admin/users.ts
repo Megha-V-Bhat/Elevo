@@ -17,14 +17,14 @@ export function emailFailure(e: { status?: number; message?: string } | null) {
  * redirect allow-listing: it points straight at /auth/confirm with a token hash. "invite" creates
  * the auth user; "recovery" is for someone who already has one (e.g. still INVITED).
  */
-export async function invitationLink(email: string, type: "invite" | "recovery", fullName?: string) {
+export async function invitationLink(email: string, type: "invite" | "recovery", fullName?: string, next = "/accept-invite") {
   const { data, error } = await adminDb().auth.admin.generateLink(type === "invite" ? { type, email, options: { data: { full_name: fullName } } } : { type, email });
   const hash = data?.properties?.hashed_token;
   if (error || !hash) {
     if (/already|registered|exists/i.test(error?.message ?? "")) throw new AppError("CONFLICT", `${email} already has an account.`);
     throw new AppError("INTERNAL", "We couldn't create an invite link. Try again in a minute.");
   }
-  return { id: data.user.id, link: `${SITE_URL}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=${type}&next=/accept-invite` };
+  return { id: data.user.id, link: `${SITE_URL}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=${type}&next=${encodeURIComponent(next)}` };
 }
 
 /**

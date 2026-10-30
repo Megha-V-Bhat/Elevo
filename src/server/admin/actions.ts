@@ -8,6 +8,7 @@ import { inviteInput, schemeInput } from "@/lib/validators";
 import { requireRole } from "../authz";
 import { AppError, handle, must } from "../result";
 import { db } from "../supabase";
+import { auditEvent } from "./audit";
 import { adminDb } from "./client";
 import { createInvitedUser, emailFailure, invitationLink } from "./users";
 
@@ -45,6 +46,22 @@ export async function copyInviteLink(userId: string) {
     if (!u) throw new AppError("NOT_FOUND", "User not found.");
     if (u.status !== "INVITED") throw new AppError("CONFLICT", "This person has already activated their account.");
     return (await invitationLink(u.email, "recovery")).link;
+  });
+}
+
+/** One-time link that lets an active user set a new password, for when email isn't available. Audited. */
+export async function copyResetLink(userId: string) {
+  return handle(async () => {
+    const hod = await requireRole("HOD");
+    const id = uuid.parse(userId);
+    if (id === hod.id) throw new AppError("CONFLICT", "Change your own password from Account → Change password.");
+    const supabase = await db();
+    const { data: u } = await supabase.from("users").select("email, status").eq("id", id).maybeSingle();
+    if (!u) throw new AppError("NOT_FOUND", "User not found.");
+    if (u.status !== "ACTIVE") throw new AppError("CONFLICT", u.status === "INVITED" ? "They haven't activated yet. Use \"Copy invite link\" instead." : "Reactivate this account first.");
+    const { link } = await invitationLink(u.email, "recovery", undefined, "/reset-password");
+    await auditEvent(hod.id, "password_reset_link", "users", id, {});
+    return link;
   });
 }
 

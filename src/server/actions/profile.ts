@@ -9,6 +9,7 @@ import { HOME, requireUser } from "../authz";
 import { safeName, validateFile } from "../files";
 import { activeScheme, subjectCatalog } from "../queries/academics";
 import { completion } from "../queries/people";
+import { rateLimit } from "../admin/ratelimit";
 import { AppError, handle, must } from "../result";
 import { db } from "../supabase";
 
@@ -167,6 +168,8 @@ export async function changePassword(current: string, next: string) {
   return handle(async () => {
     const u = await requireUser();
     const pw = z.string().min(10, "Use at least 10 characters").regex(/[A-Za-z]/, "Include a letter").regex(/\d/, "Include a number").parse(next);
+    // The current-password check is a sign-in attempt, so it gets the same brute-force limit.
+    if (!(await rateLimit("pwchange", u.id, 5, 900))) throw new AppError("RATE_LIMITED", "Too many attempts. Wait 15 minutes and try again.");
     const supabase = await db();
     const check = await supabase.auth.signInWithPassword({ email: u.email, password: current });
     if (check.error) throw new AppError("VALIDATION", "Your current password isn't right.", { current: "Your current password isn't right." });

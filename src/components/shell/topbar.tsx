@@ -4,7 +4,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Popover from "@radix-ui/react-popover";
 import { Command } from "cmdk";
 import { formatDistanceToNowStrict } from "date-fns";
-import { Bell, Check, Clock, LogOut, MessageCircleQuestion, Search, Settings, User } from "lucide-react";
+import { Bell, Check, Clock, KeyRound, LogOut, MessageCircleQuestion, Search, Settings, User } from "lucide-react";
 import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -103,6 +103,11 @@ function AccountMenu({ me }: { me: Me }) {
           <DropdownMenu.Item asChild>
             <Link href="/account" className="flex min-h-11 items-center gap-3 rounded-control px-3 font-semibold text-ink-700 outline-none data-[highlighted]:bg-canvas-sunk">
               <Settings className="size-4" /> Account & notifications
+            </Link>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item asChild>
+            <Link href="/account#password" className="flex min-h-11 items-center gap-3 rounded-control px-3 font-semibold text-ink-700 outline-none data-[highlighted]:bg-canvas-sunk">
+              <KeyRound className="size-4" /> Change password
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item
@@ -334,8 +339,11 @@ function CommandPalette({ open, onOpenChange, role }: { open: boolean; onOpenCha
               <p.icon className="size-4" strokeWidth={1.75} /> {p.label}
             </Command.Item>
           ))}
-          <Command.Item value="account notifications settings password" onSelect={() => go("/account")} className={itemCls}>
+          <Command.Item value="account notifications settings" onSelect={() => go("/account")} className={itemCls}>
             <Settings className="size-4" /> Account & notifications
+          </Command.Item>
+          <Command.Item value="change password reset security" onSelect={() => go("/account#password")} className={itemCls}>
+            <KeyRound className="size-4" /> Change password
           </Command.Item>
         </Command.Group>
       </Command.List>

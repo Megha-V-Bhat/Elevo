@@ -15,8 +15,9 @@ export function PasswordForm() {
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [pending, start] = useTransition();
   return (
-    <Card>
+    <Card id="password" className="scroll-mt-24">
       <h2 className="font-display text-h3 font-semibold text-ink-900">Change password</h2>
+      <p className="mt-1 text-small text-ink-500">Forgotten your current password? Sign out and use &ldquo;Forgot password?&rdquo;, or ask your HOD for a reset link.</p>
       <form
         className="mt-4 grid gap-4 sm:max-w-md"
         onSubmit={(e) => {
