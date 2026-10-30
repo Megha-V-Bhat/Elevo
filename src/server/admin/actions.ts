@@ -93,6 +93,49 @@ export async function setUserStatus(userId: string, status: "ACTIVE" | "SUSPENDE
   });
 }
 
+const suspendInput = z.object({
+  user: z.string().trim().min(1, "Enter their email"),
+  moveTo: z.string().optional(), // mentor id, "unassign", or empty
+  reason: z.string().trim().max(300).optional(),
+});
+
+/**
+ * Suspends someone by email or id. A mentor's current students are first moved to another
+ * mentor (or left unassigned) so nobody is left with a mentor who can't see them.
+ */
+export async function suspendUser(input: unknown) {
+  return handle(async () => {
+    const hod = await requireRole("HOD");
+    const v = suspendInput.parse(input);
+    const supabase = await db();
+    const byId = uuid.safeParse(v.user).success;
+    const { data: u } = await supabase.from("users").select("id, email, role, status").eq(byId ? "id" : "email", byId ? v.user : v.user.toLowerCase()).maybeSingle();
+    if (!u) throw new AppError("NOT_FOUND", "No one with that email is in your department.", { user: "No one with that email is in your department." });
+    if (u.id === hod.id) throw new AppError("CONFLICT", "You can't suspend your own account.", { user: "You can't suspend your own account." });
+    if (u.status === "SUSPENDED") throw new AppError("CONFLICT", "They're already suspended.", { user: "They're already suspended." });
+    if (u.role === "MENTOR") {
+      const { data: mentees } = await supabase.from("mentor_assignments").select("student_id").eq("mentor_id", u.id).is("ended_at", null);
+      const ids = (mentees ?? []).map((m) => m.student_id);
+      if (ids.length) {
+        if (!v.moveTo) throw new AppError("VALIDATION", `They mentor ${ids.length} student${ids.length === 1 ? "" : "s"}. Choose who takes them over.`, { moveTo: "Choose a mentor, or leave them unassigned" });
+        const reason = v.reason || "Mentor suspended";
+        if (v.moveTo === "unassign") must(await supabase.rpc("unassign_students", { p_student_ids: ids, p_reason: reason }));
+        else {
+          const to = uuid.parse(v.moveTo);
+          if (to === u.id) throw new AppError("VALIDATION", "Choose a different mentor.", { moveTo: "Choose a different mentor" });
+          const { error } = await supabase.rpc("assign_students", { p_student_ids: ids, p_mentor_id: to, p_reason: reason });
+          if (error) throw new AppError("CONFLICT", error.message, { moveTo: error.message });
+        }
+      }
+    }
+    const { error } = await supabase.from("users").update({ status: "SUSPENDED" }).eq("id", u.id);
+    if (error) throw new AppError("CONFLICT", /last/i.test(error.message) ? "Elevo needs at least one active HOD, so the last one can't be suspended." : "We couldn't suspend them. Try again.");
+    await auditEvent(hod.id, "user_suspended", "users", u.id, { reason: v.reason ?? null, moved_to: v.moveTo ?? null });
+    revalidatePath("/hod", "layout");
+    return { email: u.email };
+  });
+}
+
 export async function setMentorCapacity(mentorId: string, capacity: number) {
   return handle(async () => {
     await requireRole("HOD");

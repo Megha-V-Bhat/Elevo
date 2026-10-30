@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, MailPlus, MoreHorizontal, UserPlus } from "lucide-react";
+import { Copy, MailPlus, MoreHorizontal, UserCheck, UserPlus, UserX } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -10,9 +10,88 @@ import { Button } from "@/components/ui/button";
 import { Avatar, StatusPill } from "@/components/ui/display";
 import { Field, Input, Select } from "@/components/ui/form";
 import { fmtDate } from "@/lib/dates";
-import { copyInviteLink, copyResetLink, inviteUser, resendInvite, setUserRole, setUserStatus } from "@/server/admin/actions";
+import { copyInviteLink, copyResetLink, inviteUser, resendInvite, setUserRole, setUserStatus, suspendUser } from "@/server/admin/actions";
 
 export type UserRow = { id: string; email: string; name: string; role: "MENTEE" | "MENTOR" | "HOD"; status: string; created_at: string; last_seen_at: string | null };
+export type MentorOption = { id: string; email: string; name: string; mentees: number; capacity: number | null };
+
+/**
+ * Suspend by email (header button) or for a given person (row button). A mentor with current
+ * students must hand them to another mentor (or leave them unassigned) first.
+ */
+function SuspendSheet({ open, onOpenChange, mentors, preset }: { open: boolean; onOpenChange: (o: boolean) => void; mentors: MentorOption[]; preset?: { email: string; name: string } }) {
+  const router = useRouter();
+  const [v, setV] = useState({ user: preset?.email ?? "", moveTo: "", reason: "" });
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [pending, start] = useTransition();
+  useEffect(() => {
+    if (open) {
+      setV({ user: preset?.email ?? "", moveTo: "", reason: "" });
+      setErrs({});
+    }
+  }, [open, preset?.email]);
+  const target = mentors.find((m) => m.email.toLowerCase() === v.user.trim().toLowerCase());
+  return (
+    <BottomSheet open={open} onOpenChange={onOpenChange} title={preset ? `Suspend ${preset.name || preset.email}` : "Suspend a user"} description="They're signed out straight away and can't sign in until you reactivate them. Their records stay; nothing is deleted.">
+      <form
+        className="grid gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          start(async () => {
+            const r = await suspendUser(v);
+            if (!r.ok) {
+              setErrs(r.error.fieldErrors ?? {});
+              return void toast.error(r.error.message);
+            }
+            toast.success(`${r.data.email} is suspended`);
+            onOpenChange(false);
+            router.refresh();
+          });
+        }}
+      >
+        {!preset && (
+          <Field label="Email" htmlFor="sus-email" required error={errs.user}>
+            <Input id="sus-email" type="email" value={v.user} onChange={(e) => setV({ ...v, user: e.target.value })} />
+          </Field>
+        )}
+        {target && target.mentees > 0 && (
+          <Field label={`Move their ${target.mentees} student${target.mentees === 1 ? "" : "s"} to`} htmlFor="sus-move" required error={errs.moveTo} helper="Open questions move with the students. You can rebalance later on the Assignments board.">
+            <Select id="sus-move" value={v.moveTo} onChange={(e) => setV({ ...v, moveTo: e.target.value })}>
+              <option value="">Choose a mentor…</option>
+              {mentors
+                .filter((m) => m.id !== target.id)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.mentees}
+                    {m.capacity ? `/${m.capacity}` : ""} students)
+                  </option>
+                ))}
+              <option value="unassign">Leave them unassigned for now</option>
+            </Select>
+          </Field>
+        )}
+        <Field label="Reason" htmlFor="sus-reason" optional helper="Kept in the audit log.">
+          <Input id="sus-reason" value={v.reason} onChange={(e) => setV({ ...v, reason: e.target.value })} />
+        </Field>
+        <Button type="submit" size="lg" variant="destructive" loading={pending}>
+          <UserX /> Suspend
+        </Button>
+      </form>
+    </BottomSheet>
+  );
+}
+
+export function SuspendButton({ mentors }: { mentors: MentorOption[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        <UserX /> Suspend a user
+      </Button>
+      <SuspendSheet open={open} onOpenChange={setOpen} mentors={mentors} />
+    </>
+  );
+}
 
 /** A one-time link with a copy button, for when email isn't available. */
 function ShareLink({ link, email, reason, purpose = "set their password" }: { link: string; email: string; reason?: string | null; purpose?: string }) {
@@ -113,10 +192,11 @@ export function InviteButton() {
   );
 }
 
-export function UsersTable({ rows, meId }: { rows: UserRow[]; meId: string }) {
+export function UsersTable({ rows, meId, mentors }: { rows: UserRow[]; meId: string; mentors: MentorOption[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [share, setShare] = useState<{ email: string; link: string; kind: "invite" | "reset" } | null>(null);
+  const [suspending, setSuspending] = useState<UserRow | null>(null);
   const getLink = (u: UserRow, kind: "invite" | "reset") =>
     start(async () => {
       const r = await (kind === "invite" ? copyInviteLink(u.id) : copyResetLink(u.id));
@@ -137,6 +217,7 @@ export function UsersTable({ rows, meId }: { rows: UserRow[]; meId: string }) {
     });
   return (
     <>
+    <SuspendSheet open={!!suspending} onOpenChange={(o) => !o && setSuspending(null)} mentors={mentors} preset={suspending ? { email: suspending.email, name: suspending.name } : undefined} />
     <BottomSheet
       open={!!share}
       onOpenChange={(o) => !o && setShare(null)}
@@ -159,6 +240,16 @@ export function UsersTable({ rows, meId }: { rows: UserRow[]; meId: string }) {
           </div>
           <span className="rounded-full bg-canvas-sunk px-2.5 py-0.5 text-label font-semibold text-ink-700">{u.role === "MENTEE" ? "Student" : u.role === "MENTOR" ? "Mentor" : "HOD"}</span>
           <StatusPill status={u.status} />
+          {u.id !== meId &&
+            (u.status === "SUSPENDED" ? (
+              <Button variant="secondary" size="sm" onClick={() => run(() => setUserStatus(u.id, "ACTIVE"), "Reactivated")}>
+                <UserCheck /> Reactivate
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" className="text-coral-700 hover:bg-coral-50" onClick={() => setSuspending(u)}>
+                <UserX /> Suspend
+              </Button>
+            ))}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger aria-label={`Actions for ${u.email}`} className="flex size-11 items-center justify-center rounded-control text-ink-700 hover:bg-canvas-sunk">
               <MoreHorizontal className="size-5" />
@@ -194,12 +285,7 @@ export function UsersTable({ rows, meId }: { rows: UserRow[]; meId: string }) {
                     </DropdownMenu.Item>
                   ) : (
                     <DropdownMenu.Item
-                      onSelect={() =>
-                        toast(`Suspend ${u.name || u.email}?`, {
-                          description: "They'll be signed out and blocked until reactivated.",
-                          action: { label: "Suspend", onClick: () => run(() => setUserStatus(u.id, "SUSPENDED"), "Suspended") },
-                        })
-                      }
+                      onSelect={() => setSuspending(u)}
                       className="flex min-h-10 cursor-pointer items-center rounded-control px-3 text-small font-semibold text-coral-700 outline-none data-[highlighted]:bg-coral-50"
                     >
                       Suspend
