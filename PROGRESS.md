@@ -1,6 +1,9 @@
 # PROGRESS.md
 
-## Latest (30 Oct 2026)
+## Latest (30 Oct 2026, database move)
+- Moved to the **ELEVO-2** Supabase project (Mumbai, `ap-south-1`): all 5 migrations applied, base + demo seed loaded; Vercel functions moved to `bom1` next to it. ELEVO-2's earlier, empty tables were moved into a `legacy_backup` schema rather than deleted. The demo seed is now resumable (it finishes half-seeded students after a network error).
+
+## 30 Oct 2026
 - **Live:** https://elevo-woad.vercel.app (Vercel, functions in `syd1` next to the Sydney Supabase project, Fluid compute on). Code at https://github.com/Megha-V-Bhat/Elevo.
 - Signed-in journeys (`tests/e2e/journeys.spec.ts`) run against the live site: 7/7 ✓, covering 61 pages for all three roles, Pulse check-in, planner save, Ask → mentor inbox, PDFs, all 15 exports and role boundaries. They found and fixed two production-only bugs: pdfkit's standard fonts weren't traced into the PDF/export functions, and notification grouping differed between the UTC server and the IST browser (hydration error #418).
 - Performance: database time is ~150–200 ms per page (20–60 ms per query); the rest is the India ↔ Sydney distance and cold starts. Fixes: `syd1` region, Fluid compute, `staleTimes.dynamic = 30` (repeat navigation ~60 ms), Dock/tab-bar prefetch to the loading skeleton. `PERF_LOG=1` logs every Supabase call with its timing. Moving the database to Mumbai (ap-south-1) would cut a further ~150–250 ms per request.

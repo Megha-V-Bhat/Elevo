@@ -18,7 +18,7 @@ These steps need your accounts and secrets, so they're manual. Never paste secre
 7. **Advisors:** Database → Advisors → Security and Performance should show no errors.
 
 ## 2. Vercel
-Current production: https://elevo-woad.vercel.app (team "Megha", project `elevo`). `vercel.json` pins functions to `syd1` (same region as the current Sydney Supabase project; change it to `bom1` if you move the database to Mumbai) and turns on Fluid compute.
+Current production: https://elevo-woad.vercel.app (team "Megha", project `elevo`). The database is the **ELEVO-2** Supabase project (`eghnnidquofftlchtsga`, Mumbai `ap-south-1`); `vercel.json` pins functions to `bom1` (Mumbai) next to it and turns on Fluid compute. Keep the two regions together if either ever moves.
 
 1. vercel.com → Add New → Project → import `elevo` → framework Next.js. Importing needs a GitHub login connection in Vercel → Account Settings → Authentication. Without one, deploy from your machine: `npx vercel login`, `npx vercel link --project elevo`, `npx vercel deploy --prod`. A `.vercelignore` keeps `.env*`, `report/` and logs out of the upload.
 2. Environment variables (Production): `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (new random value). Do **not** add `SUPABASE_DB_URL`, `SUPABASE_ACCESS_TOKEN` or the seed/demo passwords.

@@ -105,7 +105,12 @@ async function main() {
     const mentor = mentorIds[i % mentorIds.length];
     studentIds.push({ id: u.id, name, kind, sem, mentor });
     if (i < 6) logins.push(`| Student (${kind}) | ${name} | ${email} |`);
-    if (!u.created) continue;
+    // Resumable: skip students whose records are complete; finish any that a failed run left half-seeded.
+    const last = kind === "missing" ? sem - 1 : sem;
+    if (!u.created) {
+      const { data: done } = await db.from("academic_semesters").select("id, semester_summaries(academic_semester_id)").eq("student_id", u.id).eq("semester_no", last).maybeSingle();
+      if (done && (done.semester_summaries as unknown[] | null)?.length) continue;
+    }
     const admission = 2026 - Math.ceil(sem / 2);
     ok(
       await db.from("student_profiles").upsert({
@@ -128,11 +133,11 @@ async function main() {
       }),
       "student profile",
     );
-    ok(await db.rpc("assign_students", { p_student_ids: [u.id], p_mentor_id: mentor, p_reason: "Initial allocation" }), "assignment");
+    const { data: assigned } = await db.from("mentor_assignments").select("id").eq("student_id", u.id).is("ended_at", null).maybeSingle();
+    if (!assigned) ok(await db.rpc("assign_students", { p_student_ids: [u.id], p_mentor_id: mentor, p_reason: "Initial allocation" }), "assignment");
 
     // Academic history
     const entries: { subject_key: string; semester_no: number; credits: number | null; points: number | null }[] = [];
-    const last = kind === "missing" ? sem - 1 : sem;
     for (let s = 1; s <= last; s++) {
       const current = s === sem;
       const trend = kind === "improving" ? (s - 1) * 4 : kind === "declining" ? -(s - 1) * 4 : kind === "strong" ? 14 : kind === "struggling" ? -14 : 0;
