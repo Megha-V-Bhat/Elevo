@@ -1,6 +1,12 @@
 # PROGRESS.md
 
-## Latest (27 Oct 2026)
+## Latest (30 Oct 2026)
+- **Live:** https://elevo-woad.vercel.app (Vercel, functions in `syd1` next to the Sydney Supabase project, Fluid compute on). Code at https://github.com/Megha-V-Bhat/Elevo.
+- Signed-in journeys (`tests/e2e/journeys.spec.ts`) run against the live site: 7/7 ✓, covering 61 pages for all three roles, Pulse check-in, planner save, Ask → mentor inbox, PDFs, all 15 exports and role boundaries. They found and fixed two production-only bugs: pdfkit's standard fonts weren't traced into the PDF/export functions, and notification grouping differed between the UTC server and the IST browser (hydration error #418).
+- Performance: database time is ~150–200 ms per page (20–60 ms per query); the rest is the India ↔ Sydney distance and cold starts. Fixes: `syd1` region, Fluid compute, `staleTimes.dynamic = 30` (repeat navigation ~60 ms), Dock/tab-bar prefetch to the loading skeleton. `PERF_LOG=1` logs every Supabase call with its timing. Moving the database to Mumbai (ap-south-1) would cut a further ~150–250 ms per request.
+- Manual follow-ups: add the Vercel URL to Supabase → Authentication → URL Configuration; set `RESEND_API_KEY`; optionally connect GitHub in Vercel for deploy-on-push.
+
+## 27 Oct 2026
 - Built in Claude Code (not Antigravity), following the Elevo spec with the fixes from the pre-build review.
 - Phases 0–8 implemented; Phase 9's code parts are done (seeds, docs, templates, smoke tests). The deployment steps are manual (DEPLOY.md).
 - Gates: `typecheck` ✓ · `lint` ✓ · `test` 195 ✓ (engines 72, guards 72+, PDF 3, RLS 45) · `build` ✓ · `test:e2e` public 33 ✓ (390/834/1440, axe clean).
@@ -37,7 +43,7 @@
 ## Known gaps / proposals
 - UXP-08 first-visit coach marks: not built.
 - Performance budget: most routes are ~105 kB first-load JS. Heavier ones are `/notifications` (~258 kB), `/setup` (~232 kB), `/hod/assignments` (~216 kB) and pages with composer sheets (~200–207 kB), so the 180 kB target isn't met everywhere. Next steps: lazy-load sheets and the notification panel, and split the Supabase browser client from the bell.
-- Lighthouse hasn't been run (no deployed URL yet).
+- Lighthouse hasn't been run against the deployed URL yet.
 - Immediate events (new feedback, replies) notify in-app with Realtime; email is used for the daily reminders. A per-event email option could come later.
 - The HOD can change roles, so the "HOD aggregates only" boundary is a policy, not cryptography. Role changes are audited.
 
@@ -53,3 +59,5 @@
 | Contrast | 3 failures → fixed | hero text opacity, gradient end, destructive |
 | Axe e2e | 6 → 33 ✓ | aria-hidden focusables, opacity on chip text |
 | Security | anon RPC hole → fixed, +3 tests | is_service + revoke |
+| Deploy (Vercel) | journeys 5/7 → 7/7 ✓ | pdfkit fonts traced; IST notification grouping; ask rate limit reset in test cleanup |
+| Performance | avg page 1.3 s → repeat nav ~60 ms | syd1, Fluid, router cache, nav prefetch; `-0.0` trend label fixed |

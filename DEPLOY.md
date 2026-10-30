@@ -18,7 +18,9 @@ These steps need your accounts and secrets, so they're manual. Never paste secre
 7. **Advisors:** Database → Advisors → Security and Performance should show no errors.
 
 ## 2. Vercel
-1. vercel.com → Add New → Project → import `elevo` → framework Next.js.
+Current production: https://elevo-woad.vercel.app (team "Megha", project `elevo`). `vercel.json` pins functions to `syd1` (same region as the current Sydney Supabase project; change it to `bom1` if you move the database to Mumbai) and turns on Fluid compute.
+
+1. vercel.com → Add New → Project → import `elevo` → framework Next.js. Importing needs a GitHub login connection in Vercel → Account Settings → Authentication. Without one, deploy from your machine: `npx vercel login`, `npx vercel link --project elevo`, `npx vercel deploy --prod`. A `.vercelignore` keeps `.env*`, `report/` and logs out of the upload.
 2. Environment variables (Production): `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (new random value). Do **not** add `SUPABASE_DB_URL`, `SUPABASE_ACCESS_TOKEN` or the seed/demo passwords.
 3. Deploy. Copy the URL, then in Supabase → Authentication → URL Configuration set Site URL and Redirect URLs (`https://<app>/**`) to it. Update `NEXT_PUBLIC_SITE_URL` and redeploy if it changed.
 4. **Settings → Cron Jobs:** `/api/cron/daily` should be listed (03:30 UTC ≈ 09:00 IST). Click Run once and confirm a 200 in Logs.
@@ -29,7 +31,9 @@ These steps need your accounts and secrets, so they're manual. Never paste secre
 3. Assign the student to the mentor. As the student: Pulse check-in, ask a question, save and share a planner target. As the mentor: see all three and reply.
 4. Reassign the student to another mentor. The first mentor must no longer open the student, their Pulse or their question (404/403).
 5. As the new mentor, download the PDF: no charts, insights, Pulse, planner or questions.
-6. Run `E2E_BASE_URL=https://<app> E2E_MENTEE_EMAIL=… E2E_MENTOR_EMAIL=… E2E_MENTEE_PASSWORD=… E2E_MENTOR_PASSWORD=… pnpm test:e2e`.
+6. Run the signed-in journeys against the deployment (they read demo credentials from `.env.local`, clean up their own questions and reset login/ask rate limits):
+   `E2E_BASE_URL=https://<app> pnpm playwright test journeys --project=desktop`
+7. To profile, set `PERF_LOG=1` in Vercel, redeploy, and read the `[perf]` lines with `npx vercel logs <deployment> --since 10m`. Remove it afterwards.
 
 ## 4. Keep it healthy
 - Free Supabase projects pause after inactivity; restore from the dashboard or upgrade for real use.
