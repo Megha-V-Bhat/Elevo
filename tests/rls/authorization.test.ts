@@ -29,6 +29,10 @@ describe("profiles & roles", () => {
     expect(await count(P.Y, `select * from student_profiles where user_id = $1`, [P.A])).toBe(0);
   });
   it("HOD sees everyone", async () => expect(await count(P.H, `select * from student_profiles`)).toBe(2));
+  it("readable views are dashboard-only: no signed-in role can read them", async () => {
+    for (const user of [P.A, P.X, P.H]) await expect(as(db, user, `select * from readable.students`)).rejects.toThrow();
+    expect((await asService(db, `select * from readable.students`)).length).toBe(2);
+  });
   it("student sees their mentor's profile only", async () => {
     expect(await count(P.A, `select * from mentor_profiles`)).toBe(1);
   });
@@ -313,6 +317,9 @@ describe("anonymous callers", () => {
   });
   it("cannot read any table", async () => {
     await expect(asAnon(`select * from student_profiles`)).rejects.toThrow();
+  });
+  it("cannot read the dashboard's readable views", async () => {
+    await expect(asAnon(`select * from readable.marks`)).rejects.toThrow();
   });
   it("is_service is false for anon even inside SECURITY DEFINER", async () => {
     await db.query(`select set_config('request.jwt.claims', $1, false)`, [JSON.stringify({ role: "anon" })]);
